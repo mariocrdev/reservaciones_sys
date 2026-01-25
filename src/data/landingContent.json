@@ -1,0 +1,402 @@
+{
+  "navbar": {
+    "mainLinks": [
+      { "href": "#inicio", "label": "Inicio", "icon": "Home" },
+      { "href": "#servicios", "label": "Servicios", "icon": "Handshake" },
+      {
+        "href": "#instalaciones",
+        "label": "Instalaciones",
+        "icon": "Building2"
+      },
+      { "href": "#nosotros", "label": "Nosotros", "icon": "UsersRound" },
+      { "href": "#contact", "label": "Contacto", "icon": "Mail" }
+    ],
+    "secondaryLinks": [
+      {
+        "href": "#membresia",
+        "label": "Membresías",
+        "icon": "BadgeDollarSign"
+      },
+      {
+        "href": "#testimonios",
+        "label": "Testimonios",
+        "icon": "MessageSquareQuote"
+      },
+      { "href": "#horarios", "label": "Horarios", "icon": "Clock" }
+    ]
+  },
+  "hero": {
+    "slides": [
+      {
+        "id": 1,
+        "image": "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80",
+        "title": "Bienvenido a nuestro Club Deportivo",
+        "subtitle": "Descubre un mundo de posibilidades para mejorar tu condición física",
+        "features": [
+          "Instalaciones de primera",
+          "Entrenadores certificados",
+          "Comunidad activa"
+        ]
+      },
+      {
+        "id": 2,
+        "image": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+        "title": "Instalaciones de Primera Clase",
+        "subtitle": "Equipamiento moderno para entrenamientos efectivos",
+        "features": [
+          "Canchas profesionales",
+          "Gimnasio completo",
+          "Áreas de recuperación"
+        ]
+      },
+      {
+        "id": 3,
+        "image": "https://images.unsplash.com/photo-1517964603305-11c0f6f66012?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80",
+        "title": "Entrenadores Profesionales",
+        "subtitle": "Guía personalizada para alcanzar tus objetivos",
+        "features": [
+          "Certificación internacional",
+          "Experiencia comprobada",
+          "Atención personalizada"
+        ]
+      }
+    ]
+  },
+  "stats": [
+    {
+      "id": 1,
+      "value": "20+",
+      "label": "Años de experiencia",
+      "icon": "Calendar"
+    },
+    {
+      "id": 2,
+      "value": "1,000+",
+      "label": "Miembros activos",
+      "icon": "Users"
+    },
+    {
+      "id": 3,
+      "value": "10+",
+      "label": "Entrenadores profesionales",
+      "icon": "Award"
+    },
+    {
+      "id": 4,
+      "value": "4.8",
+      "label": "Calificación promedio",
+      "icon": "Star"
+    }
+  ],
+  "services": {
+    "title": "Servicios y Comodidades",
+    "description": "Disfruta de nuestras instalaciones de primera clase y servicios exclusivos diseñados para brindarte la mejor experiencia.",
+    "list": [
+      {
+        "id": 1,
+        "title": "Tienda",
+        "description": "Encuentra todo lo que necesitas para tu deporte favorito en nuestra tienda especializada.",
+        "icon": "ShoppingBag",
+        "color": "bg-emerald-500",
+        "images": [
+          "https://plus.unsplash.com/premium_photo-1682435566673-cedb75cd7459?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+          "https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+        ],
+        "popular": false
+      },
+      {
+        "id": 2,
+        "title": "Bar y Restaurante",
+        "description": "Disfruta de una variada oferta gastronómica y bebidas en un ambiente acogedor.",
+        "icon": "UtensilsCrossed",
+        "color": "bg-amber-500",
+        "images": [
+          "https://images.unsplash.com/photo-1685962891208-1e321ada83f1?q=80&w=2075&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+          "https://plus.unsplash.com/premium_photo-1742946745348-3c7c03f1e2fa?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+        ],
+        "popular": false
+      },
+      {
+        "id": 3,
+        "title": "Sala de Eventos y VIP",
+        "description": "Espacios exclusivos para celebraciones, reuniones y eventos especiales.",
+        "icon": "PartyPopper",
+        "color": "bg-purple-500",
+        "images": [
+          "https://images.unsplash.com/photo-1736963808405-f60d284c4277?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+          "https://images.unsplash.com/photo-1608713709464-04cfb951c93f?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+        ],
+        "popular": false
+      },
+      {
+        "id": 4,
+        "title": "Canchas de Tennis de Arcilla",
+        "description": "Canchas profesionales de arcilla para disfrutar del mejor tenis.",
+        "icon": "TennisBall",
+        "color": "bg-orange-500",
+        "images": [
+          "https://images.unsplash.com/photo-1675013042371-39536ea8769a?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+          "https://plus.unsplash.com/premium_photo-1664300241211-fc6076b0d9f9?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+        ],
+        "popular": true
+      },
+      {
+        "id": 5,
+        "title": "Cancha de Padel/Picklebal",
+        "description": "Instalaciones modernas para la práctica de padel y pickleball.",
+        "icon": "Racquet",
+        "color": "bg-blue-500",
+        "images": [
+          "https://images.unsplash.com/photo-1644739134858-b0fc32036267?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+          "https://images.unsplash.com/photo-1612193776960-59182e05d569?q=80&w=1986&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+        ],
+        "popular": true
+      },
+      {
+        "id": 6,
+        "title": "Peluquería",
+        "description": "Servicio de peluquería profesional para lucir impecable antes o después de tu actividad.",
+        "icon": "Scissors",
+        "color": "bg-pink-500",
+        "images": [
+          "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+          "https://plus.unsplash.com/premium_photo-1661266905493-c48be85c4482?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+        ],
+        "popular": false
+      },
+      {
+        "id": 7,
+        "title": "Piscina",
+        "description": "Piscina climatizada para natación, actividades acuáticas y relajación.",
+        "icon": "Waves",
+        "color": "bg-cyan-500",
+        "images": [
+          "https://images.unsplash.com/photo-1621245700087-a8617f91cdbe?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+          "https://images.unsplash.com/photo-1461567933755-6c82be2197da?q=80&w=1932&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+        ],
+        "popular": true
+      },
+      {
+        "id": 8,
+        "title": "Gimnasio",
+        "description": "Equipamiento de última generación para entrenamiento completo y personalizado.",
+        "icon": "Dumbbell",
+        "color": "bg-red-500",
+        "images": [
+          "https://plus.unsplash.com/premium_photo-1661301057249-bd008eebd06a?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+          "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?q=80&w=1975&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+        ],
+        "popular": true
+      },
+      {
+        "id": 9,
+        "title": "Sauna Turco",
+        "description": "Disfruta de una experiencia de relajación profunda en nuestro sauna turco, ideal para eliminar toxinas, reducir el estrés y revitalizar cuerpo y mente.",
+        "icon": "Drop",
+        "color": "bg-indigo-500",
+        "images": [
+          "https://images.unsplash.com/photo-1712659604528-b179a3634560?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+          "https://images.unsplash.com/photo-1657803778483-2b289d0f22c3?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+        ],
+        "popular": false
+      }
+    ]
+  },
+  "aboutUs": {
+    "title": "El mejor club deportivo de la ciudad",
+    "features": [
+      {
+        "title": "Más de 10 años de experiencia",
+        "description": "Brindando servicios deportivos de calidad desde 2010",
+        "icon": "Clock"
+      },
+      {
+        "title": "Entrenadores certificados",
+        "description": "Profesionales con certificaciones internacionales",
+        "icon": "Award"
+      },
+      {
+        "title": "Instalaciones modernas",
+        "description": "Equipamiento de última generación y espacios amplios",
+        "icon": "MapPin"
+      },
+      {
+        "title": "Comunidad activa",
+        "description": "Más de 1,000 miembros activos en nuestra comunidad",
+        "icon": "Users"
+      }
+    ],
+    "tabs": {
+      "historia": {
+        "title": "Nuestra Historia",
+        "content": "Desde nuestra fundación en 2010, hemos estado comprometidos con promover un estilo de vida activo y saludable en nuestra comunidad. Comenzamos como un pequeño club con apenas dos canchas de tenis y hoy nos hemos convertido en el complejo deportivo más completo de la región, manteniendo siempre nuestra filosofía de excelencia y servicio personalizado.",
+        "image": "https://images.unsplash.com/photo-1571902943202-507ec2618e8f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+      },
+      "mision": {
+        "title": "Misión y Visión",
+        "content": "Nuestra misión es proporcionar un ambiente deportivo de excelencia que inspire a las personas a desarrollar hábitos saludables y alcanzar su máximo potencial físico. Nuestra visión es ser reconocidos como el club deportivo líder en innovación, calidad de servicio y formación de atletas en toda la región.",
+        "image": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+      },
+      "equipo": {
+        "title": "Nuestro Equipo",
+        "content": "Contamos con un equipo de profesionales altamente cualificados, dedicados a ayudar a nuestros miembros a alcanzar sus objetivos personales en un ambiente acogedor y motivador. Nuestros entrenadores poseen certificaciones internacionales y experiencia comprobada en diversas disciplinas deportivas.",
+        "image": "https://images.unsplash.com/photo-1574680178050-55c6a6a96e0a?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80"
+      }
+    }
+  },
+  "memberships": {
+    "title": "Planes de Membresía",
+    "description": "Elige el plan que mejor se adapte a tus necesidades y objetivos deportivos",
+    "plans": [
+      {
+        "id": 1,
+        "name": "Básica",
+        "price": "$50",
+        "period": "mensual",
+        "features": [
+          "Acceso a instalaciones básicas",
+          "Horario limitado (8:00 AM - 6:00 PM)",
+          "1 clase grupal por semana",
+          "Acceso a vestuarios"
+        ],
+        "popular": false
+      },
+      {
+        "id": 2,
+        "name": "Premium",
+        "price": "$80",
+        "period": "mensual",
+        "features": [
+          "Acceso ilimitado a todas las instalaciones",
+          "Horario completo (6:00 AM - 10:00 PM)",
+          "3 clases grupales por semana",
+          "1 sesión de entrenamiento personal al mes",
+          "Acceso a sauna y jacuzzi",
+          "Estacionamiento gratuito"
+        ],
+        "popular": true
+      },
+      {
+        "id": 3,
+        "name": "Familiar",
+        "price": "$120",
+        "period": "mensual",
+        "features": [
+          "Acceso para 4 miembros de la familia",
+          "Horario completo (6:00 AM - 10:00 PM)",
+          "2 clases grupales por semana por miembro",
+          "Acceso a todas las instalaciones",
+          "Descuentos en eventos especiales",
+          "Estacionamiento gratuito"
+        ],
+        "popular": false
+      }
+    ]
+  },
+  "testimonials": {
+    "title": "Lo que dicen nuestros miembros",
+    "description": "Descubre por qué nuestros miembros eligen Tennis Club Portoviejo para sus actividades deportivas",
+    "list": [
+      {
+        "id": 1,
+        "name": "María Rodríguez",
+        "role": "Miembro desde 2019",
+        "content": "El Tennis Club Portoviejo ha transformado mi rutina de ejercicios. Las instalaciones son impecables y los entrenadores realmente se preocupan por tu progreso. ¡No puedo imaginar entrenar en otro lugar!",
+        "avatar": "https://images.unsplash.com/photo-1521566652839-697aa473761a?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+        "rating": 5
+      },
+      {
+        "id": 2,
+        "name": "Carlos Mendoza",
+        "role": "Miembro desde 2020",
+        "content": "Me uní al club durante la pandemia buscando mejorar mi salud. La atención personalizada y el ambiente amigable me han ayudado a mantenerme motivado. Los resultados hablan por sí solos.",
+        "avatar": "https://plus.unsplash.com/premium_photo-1689539137236-b68e436248de?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+        "rating": 5
+      },
+      {
+        "id": 3,
+        "name": "Ana Valencia",
+        "role": "Miembro desde 2018",
+        "content": "Como tenista aficionada, encontrar un club con canchas de calidad y profesores experimentados era crucial. El Tennis Club Portoviejo excedió mis expectativas. Mi técnica ha mejorado notablemente.",
+        "avatar": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+        "rating": 4
+      }
+    ]
+  },
+  "hours": {
+    "title": "Horarios de Atención",
+    "description": "Estamos disponibles para atenderte en los siguientes horarios",
+    "schedule": [
+      { "label": "Lunes - Viernes", "time": "6:00 AM - 10:00 PM" },
+      { "label": "Sábados", "time": "8:00 AM - 8:00 PM" },
+      { "label": "Domingos", "time": "8:00 AM - 5:00 PM" }
+    ],
+    "additionalInfo": [
+      {
+        "label": "Ubicación",
+        "value": "Av. Principal 123, Portoviejo, Ecuador",
+        "icon": "MapPin"
+      },
+      {
+        "label": "Capacidad",
+        "value": "Nuestras instalaciones pueden acomodar hasta 200 personas simultáneamente",
+        "icon": "Users"
+      },
+      {
+        "label": "Certificaciones",
+        "value": "Club certificado por la Federación Ecuatoriana de Tenis",
+        "icon": "Award"
+      }
+    ]
+  },
+  "contact": {
+    "title": "¿Tienes alguna pregunta?",
+    "description": "Estamos aquí para ayudarte. Envíanos un mensaje y nos pondremos en contacto contigo a la brevedad.",
+    "info": [
+      {
+        "icon": "Phone",
+        "title": "Teléfono",
+        "value": "+593 123 456 789",
+        "color": "bg-blue-500/10 text-blue-500"
+      },
+      {
+        "icon": "Mail",
+        "title": "Email",
+        "value": "info@tennisclub.com",
+        "color": "bg-purple-500/10 text-purple-500"
+      },
+      {
+        "icon": "MessageSquare",
+        "title": "Redes Sociales",
+        "value": "@portoviejotennisclub",
+        "color": "bg-pink-500/10 text-pink-500"
+      }
+    ]
+  },
+  "footer": {
+    "clubInfo": {
+      "description": "Ofrecemos servicios deportivos de calidad para todas las edades y niveles. Nuestro objetivo es promover un estilo de vida saludable y activo en nuestra comunidad.",
+      "address": "Av. Principal 123, Portoviejo, Ecuador",
+      "phone": "+593 123 456 789",
+      "email": "info@tennisclub.com"
+    },
+    "quickLinks": [
+      { "label": "Inicio", "href": "#inicio" },
+      { "label": "Servicios", "href": "#servicios" },
+      { "label": "Nosotros", "href": "#nosotros" },
+      { "label": "Horarios", "href": "#horarios" },
+      { "label": "Blog", "href": "#blog" }
+    ],
+    "servicesLinks": [
+      { "label": "Entrenamiento Personal", "href": "#" },
+      { "label": "Clases Grupales", "href": "#" },
+      { "label": "Deportes Competitivos", "href": "#" },
+      { "label": "Bienestar y Salud", "href": "#" }
+    ],
+    "socialLinks": [
+      { "label": "Facebook", "href": "#", "icon": "Facebook" },
+      { "label": "Twitter", "href": "#", "icon": "Twitter" },
+      { "label": "Instagram", "href": "#", "icon": "Instagram" }
+    ]
+  }
+}
