@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import BackgroundAuth from "../global/BackgroundAuth";
 
 export function LoginForm({ className, ...props }) {
   const { signInWithEmail } = useAuth();
@@ -37,19 +38,38 @@ export function LoginForm({ className, ...props }) {
   };
 
   return (
-    <div className="min-h-screen items-center flex px-6">
+    <div className="min-h-screen flex items-center justify-center px-6 relative overflow-hidden">
+      <div className="fixed inset-0 overflow-hidden -z-10 opacity-3">
+        <BackgroundAuth
+          className="
+      absolute
+      inset-0
+      w-full
+      h-full
+      scale-105
+      transition-transform
+      duration-8000
+      ease-out
+    "
+          preserveAspectRatio="xMidYMid slice"
+        />
+      </div>
+
       <div
-        className={cn("flex flex-col gap-6 w-full justify-center!", className)}
+        className={cn(
+          "flex flex-col gap-6 w-full max-w-sm relative z-10",
+          className,
+        )}
         {...props}
       >
-        <Card className="overflow-hidden max-w-3xl p-0">
-          <CardContent className="grid p-0 md:grid-cols-2">
+        <Card className="overflow-hidden p-0 shadow-xl bg-card/5 backdrop-blur-sm">
+          <CardContent className="grid p-0">
             <form onSubmit={handleSubmit} className="p-6 md:p-8">
               <FieldGroup>
                 <div className="flex flex-col items-center gap-2 text-center">
-                  <h1 className="text-2xl font-bold">Welcome back</h1>
+                  <h1 className="text-2xl font-bold">Bienvenido de nuevo</h1>
                   <p className="text-muted-foreground text-balance">
-                    Login to your account
+                    Inicia sesión en tu cuenta
                   </p>
                 </div>
 
@@ -60,7 +80,7 @@ export function LoginForm({ className, ...props }) {
                 )}
 
                 <Field>
-                  <FieldLabel htmlFor="email">Email</FieldLabel>
+                  <FieldLabel htmlFor="email">Correo electrónico</FieldLabel>
                   <Input
                     id="email"
                     name="email"
@@ -72,12 +92,12 @@ export function LoginForm({ className, ...props }) {
 
                 <Field>
                   <div className="flex items-center">
-                    <FieldLabel htmlFor="password">Password</FieldLabel>
+                    <FieldLabel htmlFor="password">Contraseña</FieldLabel>
                     <a
                       href="#"
                       className="ml-auto text-sm underline-offset-2 hover:underline"
                     >
-                      Forgot your password?
+                      ¿Olvidaste tu contraseña?
                     </a>
                   </div>
                   <Input
@@ -90,32 +110,27 @@ export function LoginForm({ className, ...props }) {
 
                 <Field>
                   <Button type="submit" className="w-full" disabled={loading}>
-                    {loading ? "Logging in..." : "Login"}
+                    {loading ? "Iniciando sesión..." : "Iniciar sesión"}
                   </Button>
                 </Field>
 
                 <div className="text-center text-sm">
-                  Don&apos;t have an account?{" "}
-                  <Link to="/signup" className="underline underline-offset-4">
-                    Sign up
+                  ¿No tienes una cuenta?{" "}
+                  <Link
+                    to="/auth/register"
+                    className="underline underline-offset-4"
+                  >
+                    Regístrate
                   </Link>
                 </div>
               </FieldGroup>
             </form>
-
-            <div className="bg-muted relative hidden md:block">
-              <img
-                src="/placeholder.svg"
-                alt="Image"
-                className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
-              />
-            </div>
           </CardContent>
         </Card>
 
         <div className="text-muted-foreground px-6 text-center text-sm">
-          By clicking continue, you agree to our{" "}
-          <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+          Al continuar, aceptas nuestros <a href="#">Términos de Servicio</a> y{" "}
+          <a href="#">Política de Privacidad</a>.
         </div>
       </div>
     </div>

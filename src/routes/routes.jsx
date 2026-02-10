@@ -3,6 +3,10 @@ import { useAuth } from "@/hooks/useAuth";
 
 // import AppLayout from "@/components/sidebar/AppLayout";
 import HomePage from "@/pages/Index";
+import { LoginForm } from "@/components/auth/LoginForm";
+import { SignupForm } from "@/components/auth/SignupForm";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import AppLayout from "@/components/sidebar/AppLayout";
 // import Auth from "@/pages/public/Auth";
 // import Dashboard from "@/pages/client/Dashboard/Dashboard";
 // import Facilities from "@/pages/client/Facilities/Facilities";
@@ -13,6 +17,8 @@ import HomePage from "@/pages/Index";
 // import ChildrensProfiles from "@/pages/client/Profile/ChildrensProfiles"
 // import AdminDashboard from "@/pages/admin/AdminDashboard";
 // import AdminFacilities from "@/pages/admin/AdminFacilities";
+import MyReservations from "@/pages/user/MyReservations";
+import MyProfile from "@/pages/user/MyProfile";
 // import AdminSchedules from "@/pages/admin/reservationsAdmin/AdminSchedules"
 // import AdminReservations from "@/pages/admin/reservationsAdmin/AdminReservations"
 // import AdminCourses from "@/pages/admin/coursesAdmin/AdminCourses"
@@ -23,6 +29,9 @@ import HomePage from "@/pages/Index";
 // import ProtectedRoute from "./protected.route";
 // import AdminRoute from "./admin.route";
 import { RefreshCw } from "lucide-react";
+import UsersManagement from "@/pages/admin/UsersManagement";
+import AdminFacilities from "@/pages/admin/AdminFacilities";
+import PlansManager from "@/components/admin/memberships/PlansManager";
 
 const AppRoutes = () => {
   const { session, loading } = useAuth();
@@ -30,32 +39,30 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
-      {/* <Route
-        path="/auth"
-        element={
-          session
-            ? (console.log("Tienes acceso desde routes"),
-              (<Navigate to="/dashboard" replace />))
-            : (console.log("No tienes acceso desde routes"), (<Auth />))
-        }
-      /> */}
+      <Route
+        path="/auth/login"
+        element={session ? <Navigate to="/" replace /> : <LoginForm />}
+      />
+      <Route
+        path="/auth/register"
+        element={session ? <Navigate to="/" replace /> : <SignupForm />}
+      />
       {/* Rutas protegidas con sidebar */}
-      {/* <Route
-        element={
-          <ProtectedRoute>
-            <AppLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route path="/dashboard" element={<Dashboard/>} />
-        <Route path="/profile" element={<Profile/>} />
-        <Route path="/facilities" element={<Facilities />} />
+      <Route element={<ProtectedRoute />}>
+        <Route element={<AppLayout />}>
+          <Route path="/dashboard" element={<>gfdgfd</>} />
+          <Route path="/admin/users" element={<UsersManagement />} />
+          <Route path="/admin/facilities" element={<AdminFacilities />} />
+          <Route path="/admin/memberships" element={<PlansManager />} />
+          <Route path="/my-reservations" element={<MyReservations />} />
+          <Route path="/profile" element={<MyProfile />} />
+          {/* <Route path="/facilities" element={<Facilities />} />
         <Route path="/facilities/:type/:id" element={<FacilityDetail/>} />
         <Route path="/courses" element={<Courses/>} />
         <Route path="/courses/:id" element={<CourseDetail/>} />
         <Route path="/enrolments" element={<h1>Manejar inscripciones</h1>} />
-        <Route path="/profile/childrens" element={<ChildrensProfiles/>} />
-        <Route
+        <Route path="/profile/childrens" element={<ChildrensProfiles/>} /> */}
+          {/* <Route
           path="/admin"
           element={
             <AdminRoute>
@@ -118,9 +125,10 @@ const AppRoutes = () => {
               <AdminInstructors/>
             </AdminRoute>
           }
-        />
+        /> */}
+        </Route>
       </Route>
-      <Route path="*" element={<NotFound />} /> */}
+      {/* <Route path="*" element={<NotFound />} /> */}
     </Routes>
   );
 };

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/context/ThemeContext";
 import {
   Sidebar,
   SidebarContent,
@@ -14,35 +15,11 @@ import {
   SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
-  SidebarMenuBadge,
+  useSidebar,
 } from "@/components/ui/sidebar";
-import {
-  Home,
-  CalendarDays,
-  User,
-  Settings,
-  LayoutDashboard,
-  LogOut,
-  CalendarCheck,
-  Medal,
-  Blocks,
-  CalendarCheck2,
-  Bell,
-  ChevronDown,
-  HelpCircle,
-  Moon,
-  Sun,
-  UserCircle,
-  ChevronRight,
-  BookOpen,
-  Clock,
-  Calendar,
-  Users,
-} from "lucide-react";
-import { GraduationCap } from "@phosphor-icons/react";
+import { Icon } from "@iconify/react";
 import { Button } from "@/components/ui/button";
 import { Navigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -52,44 +29,61 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import useProfilesStore from "@/stores/profile/profilesStore";
+import { useProfile } from "@/hooks/useProfile";
 import Loading from "@/components/global/Loading";
+import {
+  ChevronRight,
+  LogOut,
+  Moon,
+  Sun,
+  ChevronsUpDown,
+  ChevronDown,
+  UserCircle,
+  Home,
+} from "lucide-react";
+import { toast } from "sonner";
 
 const userNavItems = [
   {
     title: "Panel",
     url: "/dashboard",
-    icon: Home,
+    icon: "solar:home-smile-angle-bold-duotone",
     description: "Vista general de tu cuenta",
   },
   {
     title: "Instalaciones",
     url: "/facilities",
-    icon: CalendarDays,
+    icon: "solar:tennis-ball-bold-duotone",
     description: "Reserva canchas y espacios",
   },
   {
     title: "Cursos",
     url: "/courses",
-    icon: BookOpen,
+    icon: "solar:book-bookmark-bold-duotone",
     description: "Inscripciones a cursos",
+  },
+  {
+    title: "Mis Reservaciones",
+    url: "/my-reservations",
+    icon: "solar:calendar-date-bold-duotone",
+    description: "Gestiona tus reservas de instalaciones",
   },
   {
     title: "Inscripciones",
     url: "/enrolments",
-    icon: Calendar,
+    icon: "solar:clipboard-list-bold-duotone",
     description: "Gestiona tus inscripciones a los cursos",
   },
   {
     title: "Mi Perfil",
     url: "/profile",
-    icon: UserCircle,
+    icon: "solar:user-circle-bold-duotone",
     description: "Gestiona tu información",
   },
   {
     title: "Niños",
     url: "/profile/childrens",
-    icon: Users,
+    icon: "solar:users-group-rounded-bold-duotone",
     description: "Gestiona la informacion de tus niños",
   },
 ];
@@ -98,57 +92,69 @@ const adminNavItems = [
   {
     title: "Panel Admin",
     url: "/admin",
-    icon: LayoutDashboard,
+    icon: "solar:widget-bold-duotone",
     description: "Vista general administrativa",
+  },
+  {
+    title: "Usuarios",
+    url: "/admin/users",
+    icon: "solar:widget-bold-duotone",
+    description: "Gestión de usuarios",
+  },
+  {
+    title: "Planes",
+    url: "/admin/memberships",
+    icon: "solar:tag-price-bold-duotone",
+    description: "Gestión de planes de membresía",
   },
   {
     title: "Instalaciones",
     url: "/admin/facilities",
-    icon: Blocks,
+    icon: "solar:city-bold-duotone",
     description: "Gestión de instalaciones",
     badge: "3",
   },
   {
     title: "Reservas",
-    icon: CalendarCheck,
+    icon: "solar:calendar-date-bold-duotone",
     description: "Gestión de reservas y horarios",
     subItemsReservations: [
       {
         title: "Reservas",
         url: "/admin/reservations",
-        icon: CalendarCheck,
+        icon: "solar:calendar-mark-bold-duotone",
         description: "Administración de reservas",
         badge: "5",
       },
       {
         title: "Horarios reservas",
         url: "/admin/schedules",
-        icon: Clock,
+        icon: "solar:clock-circle-bold-duotone",
         description: "Configuración de horarios",
       },
     ],
   },
   {
     title: "Cursos",
-    icon: BookOpen,
+    icon: "solar:notebook-bold-duotone",
     description: "Gestión de reservas y horarios",
     subItemsCourses: [
       {
         title: "Cursos",
         url: "/admin/courses",
-        icon: BookOpen,
+        icon: "solar:book-bookmark-bold-duotone",
         description: "Administración de cursos",
       },
       {
         title: "Instructores",
         url: "/admin/instructors",
-        icon: GraduationCap,
+        icon: "solar:user-id-bold-duotone",
         description: "Administrar los instructores para los cursos",
       },
       {
         title: "Inscripciones",
         url: "/admin/enrolments",
-        icon: Calendar,
+        icon: "solar:clipboard-check-bold-duotone",
         description: "Manejo de inscripciones a cursos",
       },
     ],
@@ -156,54 +162,32 @@ const adminNavItems = [
 ];
 
 export function AppSidebar({ children }) {
-  const { session, signOut, isAdmin, loading: loadingAuth } = useAuth();
+  const { session, signOut, loading: loadingAuth } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [theme, setTheme] = useState("light");
-  const {
-    profile,
-    getProfileByUserId,
-    loading: loadingProfile,
-  } = useProfilesStore();
+  const { theme, setTheme } = useTheme();
+  const { data: profile, isLoading: loadingProfile } = useProfile(
+    session?.user?.id,
+  );
+  const isAdmin = profile?.role === "admin";
   // State to manage expanded/collapsed state of Reservas & Courses section
   const [isReservasExpanded, setIsReservasExpanded] = useState(false);
   const [isCoursesExpanded, setIsCoursesExpanded] = useState(false);
 
-  useEffect(() => {
-    if (session.user.id) {
-      getProfileByUserId(session.user.id);
-    }
-  }, [getProfileByUserId]);
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") || "light";
-    setTheme(savedTheme);
-    document.documentElement.classList.toggle("dark", savedTheme === "dark");
-  }, []);
+  // Theme logic removed - handled by ThemeContext
 
   const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
-    document.documentElement.classList.toggle("dark", newTheme === "dark");
+    setTheme(theme === "light" ? "dark" : "light");
   };
 
   const handleSignOut = async () => {
-    const { error } = await signOut.mutateAsync();
+    const { error } = await signOut();
     if (error) {
-      toast({
-        title: "Error al cerrar sesión",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast.error("Error al cerrar sesión");
     } else {
-      toast({
-        title: "Cierre de sesión exitoso",
-        description: "Hasta pronto!",
-      });
+      toast.success("sesión cerrada correctamente");
+      navigate("/auth/login");
     }
-    return <Navigate to="/auth" replace />;
   };
 
   const getPageTitle = () => {
@@ -211,12 +195,15 @@ export function AppSidebar({ children }) {
     if (location.pathname === "/facilities") return "Instalaciones";
     if (location.pathname === "/profile") return "Mi Perfil";
     if (location.pathname === "/admin") return "Administración";
+    if (location.pathname === "/admin/memberships")
+      return "Planes de Membresía";
+    if (location.pathname === "/my-reservations") return "Mis Reservaciones";
     if (location.pathname === "/courses") return "Cursos";
     if (location.pathname === "/enrolments") return "Inscripciones";
     if (location.pathname === "/profile/childrens") return "Niños";
     if (location.pathname.includes("/facilities/"))
       return "Detalle de Instalación";
-    return "Tennis Club Portoviejo";
+    return "Club Deportivo";
   };
 
   const getUserInitials = () => {
@@ -230,288 +217,307 @@ export function AppSidebar({ children }) {
 
   return (
     <SidebarProvider defaultOpen={true}>
-      <div className="flex min-h-screen w-full bg-background">
-        <Sidebar className="border-r border-border">
-          <SidebarHeader className="border-b border-border">
-            <div className="flex h-16 items-center px-4">
-              <Link to="/" className="flex items-center gap-2">
-                <div className="relative h-10 w-10 overflow-hidden rounded-md bg-primary/10">
-                  <img
-                    className="h-full w-full object-contain p-1"
-                    src="/logo-sin-fondo-1-1920x1920.png"
-                    alt="Portoviejo Tenis Club"
-                    onError={(e) => {
-                      e.target.src = "/placeholder.svg?height=40&width=40";
-                    }}
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-bold text-sm">Tennis Club</span>
-                  <span className="text-xs text-muted-foreground">
-                    Portoviejo
-                  </span>
-                </div>
-              </Link>
-            </div>
-          </SidebarHeader>
-          <SidebarContent>
-            {session && (
-              <>
-                {isAdmin && (
-                  <SidebarGroup>
-                    <SidebarGroupLabel className="flex items-center text-primary font-medium">
-                      <LayoutDashboard className="mr-2 h-4 w-4" />
-                      Administración
-                    </SidebarGroupLabel>
-                    <SidebarGroupContent>
-                      <SidebarMenu>
-                        {adminNavItems.map((item) => (
-                          <SidebarMenuItem key={item.title}>
-                            {item.subItemsReservations ? (
-                              <>
-                                <SidebarMenuButton
-                                  onClick={() =>
-                                    setIsReservasExpanded(!isReservasExpanded)
-                                  }
-                                  className="flex items-center justify-between"
-                                  tooltip={item.description}
-                                >
-                                  <div className="flex items-center">
-                                    <item.icon className="mr-2 h-4 w-4" />
-                                    <span>{item.title}</span>
-                                  </div>
-                                  <ChevronRight
-                                    className={`h-4 w-4 transition-transform ${
-                                      isReservasExpanded ? "rotate-90" : ""
-                                    }`}
-                                  />
-                                </SidebarMenuButton>
-                                {isReservasExpanded && (
-                                  <div className="ml-6">
-                                    {item.subItemsReservations.map(
-                                      (subItem) => (
-                                        <SidebarMenuItem key={subItem.title} className="mt-1">
-                                          <SidebarMenuButton
-                                            asChild
-                                            isActive={
-                                              location.pathname === subItem.url
-                                            }
-                                            tooltip={subItem.description}
-                                          >
-                                            <Link to={subItem.url}>
-                                              <subItem.icon />
-                                              <span>{subItem.title}</span>
-                                            </Link>
-                                          </SidebarMenuButton>
-                                        </SidebarMenuItem>
-                                      )
-                                    )}
-                                  </div>
-                                )}
-                              </>
-                            ) : item.subItemsCourses ? (
-                              <>
-                                <SidebarMenuButton
-                                  onClick={() =>
-                                    setIsCoursesExpanded(!isCoursesExpanded)
-                                  }
-                                  className="flex items-center justify-between"
-                                  tooltip={item.description}
-                                >
-                                  <div className="flex items-center">
-                                    <item.icon className="mr-2 h-4 w-4" />
-                                    <span>{item.title}</span>
-                                  </div>
-                                  <ChevronRight
-                                    className={`h-4 w-4 transition-transform ${
-                                      isCoursesExpanded ? "rotate-90" : ""
-                                    }`}
-                                  />
-                                </SidebarMenuButton>
-                                {isCoursesExpanded && (
-                                  <div className="ml-6">
-                                    {item.subItemsCourses.map((subItem) => (
-                                      <SidebarMenuItem key={subItem.title} className="mt-1">
-                                        <SidebarMenuButton
-                                          asChild
-                                          isActive={
-                                            location.pathname === subItem.url
-                                          }
-                                          tooltip={subItem.description}
-                                        >
-                                          <Link to={subItem.url}>
-                                            <subItem.icon />
-                                            <span>{subItem.title}</span>
-                                          </Link>
-                                        </SidebarMenuButton>
-                                      </SidebarMenuItem>
-                                    ))}
-                                  </div>
-                                )}
-                              </>
-                            ) : (
-                              <SidebarMenuButton
-                                asChild
-                                isActive={location.pathname === item.url}
-                                tooltip={item.description}
-                              >
-                                <Link to={item.url} className="relative">
-                                  <item.icon />
-                                  <span>{item.title}</span>
-                                </Link>
-                              </SidebarMenuButton>
-                            )}
-                          </SidebarMenuItem>
-                        ))}
-                      </SidebarMenu>
-                    </SidebarGroupContent>
-                  </SidebarGroup>
-                )}
-
+      <Sidebar collapsible="icon" className="border-r">
+        <SidebarHeader>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton size="lg" asChild>
+                <Link to="/">
+                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-muted">
+                    <Icon
+                      icon="emojione-monotone:sports-medal"
+                      className="size-5"
+                    />
+                  </div>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-semibold">
+                      Club Deportivo
+                    </span>
+                    <span className="truncate text-xs">Portoviejo</span>
+                  </div>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarHeader>
+        <SidebarContent>
+          {session && (
+            <>
+              {isAdmin && (
                 <SidebarGroup>
                   <SidebarGroupLabel className="flex items-center text-primary font-medium">
-                    <User className="mr-2 h-4 w-4" />
-                    Usuario
+                    <Icon
+                      icon="solar:widget-bold-duotone"
+                      className="mr-2 h-4 w-4"
+                    />
+                    Administración
                   </SidebarGroupLabel>
                   <SidebarGroupContent>
                     <SidebarMenu>
-                      {userNavItems.map((item) => (
+                      {adminNavItems.map((item) => (
                         <SidebarMenuItem key={item.title}>
-                          <SidebarMenuButton
-                            asChild
-                            isActive={location.pathname === item.url}
-                            tooltip={item.description}
-                          >
-                            <Link to={item.url}>
-                              <item.icon />
-                              <span>{item.title}</span>
-                            </Link>
-                          </SidebarMenuButton>
+                          {item.subItemsReservations ? (
+                            <>
+                              <SidebarMenuButton
+                                onClick={() =>
+                                  setIsReservasExpanded(!isReservasExpanded)
+                                }
+                                className="flex items-center justify-between"
+                                tooltip={item.description}
+                              >
+                                <div className="flex items-center">
+                                  <Icon
+                                    icon={item.icon}
+                                    className="mr-2 h-4 w-4"
+                                  />
+                                  <span>{item.title}</span>
+                                </div>
+                                <ChevronRight
+                                  className={`h-4 w-4 transition-transform ${
+                                    isReservasExpanded ? "rotate-90" : ""
+                                  }`}
+                                />
+                              </SidebarMenuButton>
+                              {isReservasExpanded && (
+                                <div className="ml-6 border-l pl-2">
+                                  {item.subItemsReservations.map((subItem) => (
+                                    <SidebarMenuItem
+                                      key={subItem.title}
+                                      className="mt-1"
+                                    >
+                                      <SidebarMenuButton
+                                        asChild
+                                        isActive={
+                                          location.pathname === subItem.url
+                                        }
+                                        tooltip={subItem.description}
+                                      >
+                                        <Link to={subItem.url}>
+                                          <Icon
+                                            icon={subItem.icon}
+                                            className="h-4 w-4"
+                                          />
+                                          <span>{subItem.title}</span>
+                                        </Link>
+                                      </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          ) : item.subItemsCourses ? (
+                            <>
+                              <SidebarMenuButton
+                                onClick={() =>
+                                  setIsCoursesExpanded(!isCoursesExpanded)
+                                }
+                                className="flex items-center justify-between"
+                                tooltip={item.description}
+                              >
+                                <div className="flex items-center">
+                                  <Icon
+                                    icon={item.icon}
+                                    className="mr-2 h-4 w-4"
+                                  />
+                                  <span>{item.title}</span>
+                                </div>
+                                <ChevronRight
+                                  className={`h-4 w-4 transition-transform ${
+                                    isCoursesExpanded ? "rotate-90" : ""
+                                  }`}
+                                />
+                              </SidebarMenuButton>
+                              {isCoursesExpanded && (
+                                <div className="ml-6 border-l pl-2">
+                                  {item.subItemsCourses.map((subItem) => (
+                                    <SidebarMenuItem
+                                      key={subItem.title}
+                                      className="mt-1"
+                                    >
+                                      <SidebarMenuButton
+                                        asChild
+                                        isActive={
+                                          location.pathname === subItem.url
+                                        }
+                                        tooltip={subItem.description}
+                                      >
+                                        <Link to={subItem.url}>
+                                          <Icon
+                                            icon={subItem.icon}
+                                            className="h-4 w-4"
+                                          />
+                                          <span>{subItem.title}</span>
+                                        </Link>
+                                      </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                  ))}
+                                </div>
+                              )}
+                            </>
+                          ) : (
+                            <SidebarMenuButton
+                              asChild
+                              isActive={location.pathname === item.url}
+                              tooltip={item.description}
+                            >
+                              <Link to={item.url} className="relative">
+                                <Icon icon={item.icon} className="h-4 w-4" />
+                                <span>{item.title}</span>
+                              </Link>
+                            </SidebarMenuButton>
+                          )}
                         </SidebarMenuItem>
                       ))}
                     </SidebarMenu>
                   </SidebarGroupContent>
                 </SidebarGroup>
+              )}
 
-                <SidebarGroup>
-                  <SidebarGroupLabel className="flex items-center text-primary font-medium">
-                    <HelpCircle className="mr-2 h-4 w-4" />
-                    Soporte
-                  </SidebarGroupLabel>
-                  <SidebarGroupContent>
-                    <SidebarMenu>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton asChild tooltip="Centro de ayuda">
-                          <a href="#" target="_blank" rel="noopener noreferrer">
-                            <HelpCircle />
-                            <span>Ayuda</span>
-                          </a>
+              <SidebarGroup>
+                <SidebarGroupLabel className="flex items-center text-primary font-medium">
+                  <Icon
+                    icon="solar:user-circle-bold-duotone"
+                    className="mr-2 h-4 w-4"
+                  />
+                  Usuario
+                </SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {userNavItems.map((item) => (
+                      <SidebarMenuItem key={item.title}>
+                        <SidebarMenuButton
+                          asChild
+                          isActive={location.pathname === item.url}
+                          tooltip={item.description}
+                        >
+                          <Link to={item.url}>
+                            <Icon icon={item.icon} className="h-4 w-4" />
+                            <span>{item.title}</span>
+                          </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </SidebarGroup>
-              </>
-            )}
-          </SidebarContent>
-          <SidebarFooter className="border-t border-border">
-            {session && (
-              <div className="p-4">
-                <div className="flex items-center gap-4 mb-4">
-                  <Avatar>
-                    <AvatarImage src={profile[0]?.profile_image_url || ""} />
-                    <AvatarFallback className="bg-primary/10 text-primary">
-                      {getUserInitials()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col">
-                    <span className="font-medium text-sm truncate max-w-[150px]">
-                      {session.user?.email || "Usuario"}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {isAdmin ? "Administrador" : "Miembro"}
-                    </span>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={toggleTheme}
-                    className="justify-start"
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+
+              <SidebarGroup>
+                <SidebarGroupLabel className="flex items-center text-primary font-medium">
+                  <Icon
+                    icon="solar:question-circle-bold-duotone"
+                    className="mr-2 h-4 w-4"
+                  />
+                  Soporte
+                </SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild tooltip="Centro de ayuda">
+                        <a href="#" target="_blank" rel="noopener noreferrer">
+                          <Icon
+                            icon="solar:question-circle-bold-duotone"
+                            className="h-4 w-4"
+                          />
+                          <span>Ayuda</span>
+                        </a>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            </>
+          )}
+        </SidebarContent>
+        <SidebarFooter>
+          {session && (
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <SidebarMenuButton
+                      size="lg"
+                      className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                    >
+                      <Avatar className="h-8 w-8 rounded-lg">
+                        <AvatarImage src={profile?.profile_image_url || ""} />
+                        <AvatarFallback className="rounded-lg bg-primary/10 text-primary">
+                          {getUserInitials()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="grid flex-1 text-left text-sm leading-tight">
+                        <span className="truncate font-semibold">
+                          {profile?.first_name
+                            ? `${profile?.first_name} ${profile?.last_name}`
+                            : "Usuario"}
+                        </span>
+                        <span className="truncate text-xs">
+                          {session.user?.email}
+                        </span>
+                      </div>
+                      <ChevronsUpDown className="ml-auto size-4" />
+                    </SidebarMenuButton>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+                    side="bottom"
+                    align="end"
+                    sideOffset={4}
                   >
-                    {theme === "light" ? (
-                      <Moon className="mr-2 h-4 w-4" />
-                    ) : (
-                      <Sun className="mr-2 h-4 w-4" />
-                    )}
-                    {theme === "light" ? "Oscuro" : "Claro"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSignOut}
-                    className="justify-start"
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Salir
-                  </Button>
-                </div>
-              </div>
-            )}
-          </SidebarFooter>
-        </Sidebar>
-        <div className="flex flex-col flex-1">
-          <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="flex items-center gap-2">
-              <SidebarTrigger />
-              <div className="font-semibold">{getPageTitle()}</div>
-            </div>
-            <div className="flex items-center gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="gap-1 py-6">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={profile[0]?.profile_image_url || ""} />
-                      <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                        {getUserInitials()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="hidden md:inline-block">
-                      {profile[0]?.first_name} {profile[0]?.last_name}
-                    </span>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Mi cuenta</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/profile" className="cursor-pointer">
-                      <UserCircle className="mr-2 h-4 w-4" />
-                      <span>Perfil</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/dashboard" className="cursor-pointer">
-                      <Home className="mr-2 h-4 w-4" />
-                      <span>Dashboard</span>
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={handleSignOut}
-                    className="cursor-pointer"
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>Cerrar sesión</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </header>
-          <main className="flex-1 overflow-auto p-6">{children}</main>
-        </div>
+                    <DropdownMenuLabel className="p-0 font-normal">
+                      <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
+                        <Avatar className="h-8 w-8 rounded-lg">
+                          <AvatarImage src={profile?.profile_image_url || ""} />
+                          <AvatarFallback className="rounded-lg">
+                            {getUserInitials()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="grid flex-1 text-left text-sm leading-tight">
+                          <span className="truncate font-semibold">
+                            {profile?.first_name} {profile?.last_name}
+                          </span>
+                          <span className="truncate text-xs">
+                            {session.user?.email}
+                          </span>
+                        </div>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={toggleTheme}
+                      className="cursor-pointer"
+                    >
+                      {theme === "light" ? (
+                        <Moon className="mr-2 h-4 w-4" />
+                      ) : (
+                        <Sun className="mr-2 h-4 w-4" />
+                      )}
+                      <span>
+                        {theme === "light" ? "Modo Oscuro" : "Modo Claro"}
+                      </span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={handleSignOut}
+                      className="cursor-pointer text-destructive focus:text-destructive"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Cerrar sesión</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          )}
+        </SidebarFooter>
+      </Sidebar>
+      <div className="flex flex-col flex-1">
+        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur supports-backdrop-filter:bg-background/60">
+          <div className="flex items-center gap-2">
+            <SidebarTrigger />
+            <div className="font-semibold">{getPageTitle()}</div>
+          </div>
+        </header>
+        <main className="flex-1 overflow-auto p-6">{children}</main>
       </div>
     </SidebarProvider>
   );

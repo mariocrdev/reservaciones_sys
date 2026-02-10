@@ -10,17 +10,8 @@ import {
   ChevronRight,
   RefreshCw,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Link } from "react-router-dom";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
 
 // Importar componentes existentes
 import Navbar from "@/components/public/NavBar";
@@ -29,9 +20,9 @@ import Services from "@/components/public/Services";
 import AboutUs from "@/components/public/AboutUs";
 import Footer from "@/components/public/Footer";
 import Contact from "@/components/public/Contact";
-import useFacilitiesStore from "@/stores/facilities/facilitiesStore";
 import landingContent from "@/data/landingContent.json";
 import StatsSection from "@/components/public/Stats";
+import Facilities from "@/components/public/FacilitiesSection";
 
 const iconMap = {
   Calendar,
@@ -45,11 +36,6 @@ const iconMap = {
 // Componente principal de la página de inicio
 const HomePage = () => {
   const [showScrollTop, setShowScrollTop] = useState(false);
-  const { facilities, loading, getFacilities } = useFacilitiesStore();
-
-  useEffect(() => {
-    getFacilities();
-  }, [getFacilities]);
 
   // Controlar cuándo mostrar el botón de volver arriba
   useEffect(() => {
@@ -65,17 +51,6 @@ const HomePage = () => {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
-
-  if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="flex flex-col items-center gap-2">
-          <RefreshCw className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-lg font-medium">Cargando...</p>
-        </div>
-      </div>
-    );
-  }
 
   const StatIcon = ({ iconName }) => {
     const Icon = iconMap[iconName];
@@ -97,81 +72,7 @@ const HomePage = () => {
       <Services />
 
       {/* Sección de Instalaciones */}
-      <section
-        id="instalaciones"
-        className=" bg-white dark:bg-sport-blueDark/80 py-10"
-      >
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <Badge className="mb-4 px-4 py-1.5 text-sm font-medium bg-sport-AquaLight/10 text-sport-AquaLight border-none">
-              Instalaciones
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Nuestras Instalaciones
-            </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
-              Disfruta de instalaciones de primer nivel diseñadas para maximizar
-              tu experiencia deportiva
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {facilities.map((facility) => (
-              <div key={facility.id} className="self-start">
-                <Card className="h-full overflow-hidden group border-0 bg-white dark:bg-sport-blueDark/60 shadow-md hover:shadow-xl transition-all duration-300">
-                  <div className="aspect-video overflow-hidden">
-                    <Carousel className="w-full">
-                      <CarouselContent>
-                        {facility.image_urls?.map((url, index) => (
-                          <CarouselItem key={index}>
-                            <div className="aspect-video w-full overflow-hidden">
-                              <img
-                                src={url || "/placeholder.svg"}
-                                alt={`${facility.name} - ${index}`}
-                                className="h-full w-full object-cover transition-all group-hover:scale-105"
-                                onError={(e) => {
-                                  const target = e.target;
-                                  target.src =
-                                    "/placeholder.svg?height=200&width=400";
-                                }}
-                              />
-                            </div>
-                          </CarouselItem>
-                        ))}
-                      </CarouselContent>
-
-                      <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-white/60 hover:bg-white  rounded-full shadow-md" />
-
-                      {/* Botón Siguiente */}
-                      <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-white/80 hover:bg-white rounded-full shadow-md" />
-                    </Carousel>
-                  </div>
-                  <CardContent className="p-5">
-                    <h3 className="text-xl font-semibold mb-2">
-                      {facility.name}
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-300">
-                      {facility.description}
-                    </p>
-                  </CardContent>
-                </Card>
-              </div>
-            ))}
-          </div>
-
-          <div className="text-center mt-10">
-            <Link to={`/auth`}>
-              <Button
-                size="lg"
-                className="bg-sport-AquaLight hover:bg-sport-AquaLight/90"
-              >
-                Reservar instalaciones
-                <ChevronRight className="ml-2 h-4 w-4" />
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </section>
+      <Facilities/>
 
       {/* Sobre Nosotros */}
       <AboutUs />

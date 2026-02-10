@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { ThemeProvider } from "./context/ThemeContext";
-import { Toaster } from 'sonner'
+import { Toaster } from "sonner";
 
 import AppRoutes from "./routes/routes";
 
@@ -18,14 +18,14 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ThemeProvider>
-          <Toaster/>
+      <ThemeProvider>
+        <AuthProvider>
+          <Toaster />
           <BrowserRouter>
-            <AppRoutes/>
+            <AppRoutes />
           </BrowserRouter>
-        </ThemeProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 }

@@ -25,12 +25,11 @@ export const AuthProvider = ({ children }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Funciones auxiliares para login/logout
+  // Funciones auxiliares para login/signup/logout
   const signInWithEmail = (email, password) => {
     return supabase.auth.signInWithPassword({ email, password });
   };
 
-  // En src/context/AuthContext.jsx (agregar esto al objeto 'value')
   const signUp = (email, password) => {
     return supabase.auth.signUp({ email, password });
   };

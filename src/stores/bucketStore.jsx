@@ -5,46 +5,6 @@ const useBucketStore = create((set, get) => ({
   loading: false,
   error: null,
 
-  addProfileImage: async (paymentImgFile, userId) => {
-    set({ loading: true, error: null });
-
-    try {
-      if (!paymentImgFile) {
-        throw new Error("No se proporcionó un archivo de imagen");
-      }
-
-      const fileName = `${userId}/profile.jpg`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("profile")
-        .upload(fileName, paymentImgFile, {
-          upsert: true, // Permite sobrescribir si ya existe
-        });
-
-      if (uploadError) {
-        console.error("Error al subir la imagen:", uploadError);
-        throw uploadError;
-      }
-
-      const { data: publicUrlData } = supabase.storage
-        .from("profile")
-        .getPublicUrl(fileName);
-
-      const publicUrl = publicUrlData.publicUrl;
-
-      set({
-        loading: false,
-        error: null,
-      });
-
-      return publicUrl;
-    } catch (err) {
-      set({ error: err.message, loading: false });
-      console.error("Error en addProfileImage:", err);
-      throw err;
-    }
-  },
-
   addProofPaymentImg: async (paymentImgFile, userId) => {
     set({ loading: true, error: null });
 
@@ -71,7 +31,7 @@ const useBucketStore = create((set, get) => ({
       if (!validationResult.valid) {
         throw new Error(
           "El archivo no es un comprobante válido. Score: " +
-            validationResult.score
+            validationResult.score,
         );
       }
 

@@ -42,7 +42,7 @@ const iconMap = {
 const Navbar = () => {
   const { session } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  // scrolled state variable was defined but unused in visual logic previously, 
+  // scrolled state variable was defined but unused in visual logic previously,
   // keeping logic intact but could be used for extra style changes if needed.
   const [scrolled, setScrolled] = useState(false);
   const [theme, setTheme] = useState("light");
@@ -62,7 +62,7 @@ const Navbar = () => {
         "contact",
       ];
       let current = "inicio";
-      
+
       // Lógica de scroll
       if (window.scrollY > 20) {
         setScrolled(true);
@@ -121,14 +121,13 @@ const Navbar = () => {
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
         // Diseño condicional: Transparente arriba, Glass al bajar
-        scrolled 
-          ? "bg-background/80 backdrop-blur-md border-b border-border/40 py-2 shadow-sm" 
-          : "bg-transparent py-4 border-b border-white/5 backdrop-blur-[2px]"
+        scrolled
+          ? "bg-background/80 backdrop-blur-md border-b border-border/40 py-2 shadow-sm"
+          : "bg-transparent py-4 border-b border-white/5 backdrop-blur-[2px]",
       )}
     >
       <div className="container mx-auto px-4 md:px-8">
         <div className="flex justify-between items-center">
-          
           {/* Logo y nombre */}
           <div className="flex items-center gap-2">
             <a href="#" className="flex items-center group">
@@ -150,25 +149,25 @@ const Navbar = () => {
           <div className="hidden lg:flex items-center gap-6">
             <div className="flex items-center gap-1">
               {mainNavLinks.map((link) => {
-                 const isActive = activeSection === link.href.substring(1);
-                 return (
+                const isActive = activeSection === link.href.substring(1);
+                return (
                   <a
                     key={link.href}
                     href={link.href}
                     className={cn(
                       "px-3 py-2 text-sm font-medium transition-all relative",
-                      isActive 
-                        ? "text-primary font-semibold" 
-                        : "text-muted-foreground hover:text-primary"
+                      isActive
+                        ? "text-primary font-semibold"
+                        : "text-muted-foreground hover:text-primary",
                     )}
                   >
                     {link.label}
                     {/* Indicador de activo: pequeño punto brillante o línea suave */}
-                    <span 
-                        className={cn(
-                            "absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-primary transition-all duration-300 rounded-full",
-                            isActive ? "w-4 opacity-100" : "w-0 opacity-0"
-                        )} 
+                    <span
+                      className={cn(
+                        "absolute bottom-0 left-1/2 -translate-x-1/2 h-0.5 bg-primary transition-all duration-300 rounded-full",
+                        isActive ? "w-4 opacity-100" : "w-0 opacity-0",
+                      )}
                     />
                   </a>
                 );
@@ -185,13 +184,25 @@ const Navbar = () => {
                     <ChevronDown className="ml-1 h-3 w-3 opacity-70" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 p-2 backdrop-blur-xl bg-background/90 border-border/50">
+                <DropdownMenuContent
+                  align="end"
+                  className="w-56 p-2 backdrop-blur-xl bg-background/90 border-border/50"
+                >
                   {secondaryNavLinks.map((link) => {
                     const IconComp = iconMap[link.icon];
                     return (
-                      <DropdownMenuItem key={link.href} asChild className="focus:bg-primary/10 cursor-pointer rounded-md">
-                        <a href={link.href} className="flex items-center gap-3 py-2">
-                          {IconComp && <IconComp className="h-4 w-4 text-primary" />}
+                      <DropdownMenuItem
+                        key={link.href}
+                        asChild
+                        className="focus:bg-primary/10 cursor-pointer rounded-md"
+                      >
+                        <a
+                          href={link.href}
+                          className="flex items-center gap-3 py-2"
+                        >
+                          {IconComp && (
+                            <IconComp className="h-4 w-4 text-primary" />
+                          )}
                           <span className="text-sm">{link.label}</span>
                         </a>
                       </DropdownMenuItem>
@@ -200,9 +211,8 @@ const Navbar = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-
-            <div className="h-4 w-px bg-border/50 mx-2" /> {/* Separador sutil */}
-
+            <div className="h-4 w-px bg-border/50 mx-2" />{" "}
+            {/* Separador sutil */}
             <div className="flex items-center gap-3">
               <ThemeToggle />
 
@@ -216,11 +226,16 @@ const Navbar = () => {
                       <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
                         <User className="h-3 w-3 text-primary" />
                       </div>
-                      <span className="hidden xl:inline text-sm font-normal">Mi Cuenta</span>
+                      <span className="hidden xl:inline text-sm font-normal">
+                        Mi Cuenta
+                      </span>
                       <ChevronDown className="h-3 w-3 opacity-50" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48 backdrop-blur-xl bg-background/90">
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-48 backdrop-blur-xl bg-background/90"
+                  >
                     <DropdownMenuItem asChild>
                       <Link to="/dashboard" className="cursor-pointer">
                         <LayoutDashboard className="h-4 w-4 mr-2" />
@@ -236,8 +251,11 @@ const Navbar = () => {
                   </DropdownMenuContent>
                 </DropdownMenu>
               ) : (
-                <Link to="/auth">
-                  <Button size="sm" className="rounded-full px-6 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20">
+                <Link to="/auth/login">
+                  <Button
+                    size="sm"
+                    className="rounded-full px-6 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20"
+                  >
                     <LogIn className="h-3 w-3 mr-2" />
                     <span>Ingresar</span>
                   </Button>
@@ -249,11 +267,11 @@ const Navbar = () => {
           {/* Mobile Menu Button */}
           <div className="lg:hidden flex items-center gap-3">
             <ThemeToggle />
-            <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={toggleMenu} 
-                className="hover:bg-transparent text-foreground"
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleMenu}
+              className="hover:bg-transparent text-foreground"
             >
               {isMenuOpen ? (
                 <X className="h-6 w-6" />
@@ -266,57 +284,64 @@ const Navbar = () => {
       </div>
 
       {/* Mobile Menu - Full width glass dropdown */}
-      <div 
+      <div
         className={cn(
-            "lg:hidden overflow-hidden transition-all duration-300 ease-in-out border-b border-border/40",
-            isMenuOpen ? "max-h-[80vh] opacity-100 bg-background/95 backdrop-blur-xl shadow-2xl" : "max-h-0 opacity-0"
+          "lg:hidden overflow-hidden transition-all duration-300 ease-in-out border-b border-border/40",
+          isMenuOpen
+            ? "max-h-[80vh] opacity-100 bg-background/95 backdrop-blur-xl shadow-2xl"
+            : "max-h-0 opacity-0",
         )}
       >
         <div className="container mx-auto px-4 py-6 space-y-6">
-            {/* Grid de enlaces limpio */}
-            <div className="grid grid-cols-2 gap-3">
-              {allNavLinks.map((link) => {
-                const IconComp = iconMap[link.icon];
-                const isActive = activeSection === link.href.substring(1);
-                return (
-                  <a
-                    key={link.href}
-                    href={link.href}
-                    onClick={closeMenu}
-                    className={cn(
-                      "flex flex-col items-center justify-center p-3 rounded-xl transition-all border border-transparent",
-                      isActive 
-                        ? "bg-primary/10 border-primary/20 text-primary" 
-                        : "hover:bg-muted text-muted-foreground"
-                    )}
-                  >
-                    {IconComp && (
-                      <IconComp className={cn("h-5 w-5 mb-2", isActive ? "text-primary" : "text-muted-foreground")} />
-                    )}
-                    <span className="text-xs font-medium">{link.label}</span>
-                  </a>
-                );
-              })}
-            </div>
-
-            <div className="pt-2 border-t border-border/50">
-              {session ? (
-                <Link to="/dashboard" onClick={closeMenu}>
-                  <Button className="w-full rounded-full" size="lg">
-                    <LayoutDashboard className="h-4 w-4 mr-2" />
-                    Ir al Panel
-                  </Button>
-                </Link>
-              ) : (
-                <Link to="/auth" onClick={closeMenu}>
-                  <Button className="w-full rounded-full" size="lg">
-                    <LogIn className="h-4 w-4 mr-2" />
-                    Iniciar Sesión
-                  </Button>
-                </Link>
-              )}
-            </div>
+          {/* Grid de enlaces limpio */}
+          <div className="grid grid-cols-2 gap-3">
+            {allNavLinks.map((link) => {
+              const IconComp = iconMap[link.icon];
+              const isActive = activeSection === link.href.substring(1);
+              return (
+                <a
+                  key={link.href}
+                  href={link.href}
+                  onClick={closeMenu}
+                  className={cn(
+                    "flex flex-col items-center justify-center p-3 rounded-xl transition-all border border-transparent",
+                    isActive
+                      ? "bg-primary/10 border-primary/20 text-primary"
+                      : "hover:bg-muted text-muted-foreground",
+                  )}
+                >
+                  {IconComp && (
+                    <IconComp
+                      className={cn(
+                        "h-5 w-5 mb-2",
+                        isActive ? "text-primary" : "text-muted-foreground",
+                      )}
+                    />
+                  )}
+                  <span className="text-xs font-medium">{link.label}</span>
+                </a>
+              );
+            })}
           </div>
+
+          <div className="pt-2 border-t border-border/50">
+            {session ? (
+              <Link to="/dashboard" onClick={closeMenu}>
+                <Button className="w-full rounded-full" size="lg">
+                  <LayoutDashboard className="h-4 w-4 mr-2" />
+                  Ir al Panel
+                </Button>
+              </Link>
+            ) : (
+              <Link to="/auth/login" onClick={closeMenu}>
+                <Button className="w-full rounded-full" size="lg">
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Iniciar Sesión
+                </Button>
+              </Link>
+            )}
+          </div>
+        </div>
       </div>
     </nav>
   );
