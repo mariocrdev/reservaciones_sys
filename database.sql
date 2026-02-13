@@ -5,8 +5,11 @@ create type public.subscription_status as enum ('pending', 'active', 'inactive',
 create type public.app_role as enum ('admin', 'instructor', 'member', 'staff');
 
 --[][][][][][[][][][][][][][][][][][][[][][][][][][][][][][][][[][][][][][][]BUCKETS
+
 --FACILITIES
+
 --{RLS}
+
 -- Permite que cualquiera vea las imágenes
 CREATE POLICY "public_view_assets"
 ON storage.objects FOR SELECT
@@ -25,6 +28,44 @@ USING (
 WITH CHECK ( 
     bucket_id = 'public_assets' 
     AND public.has_role(auth.uid(), 'admin'::public.app_role) 
+);
+
+--<><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+
+--payment_vouchers
+
+--{RLS}
+
+create policy "Admin full access vouchers"
+on storage.objects for all
+to authenticated
+using (
+  bucket_id = 'payment_vouchers' 
+  and public.has_role(auth.uid(), 'admin'::public.app_role)
+)
+with check (
+  bucket_id = 'payment_vouchers' 
+  and public.has_role(auth.uid(), 'admin'::public.app_role)
+);
+
+-- Max 5MB por archivo
+create policy "User upload own folder with rate limit"
+on storage.objects for insert
+to authenticated
+with check (
+  bucket_id = 'payment_vouchers' 
+  AND
+  -- 1. Restricción de Carpeta: Debe coincidir con su Auth UID
+  (storage.foldername(name))[1] = auth.uid()::text
+  AND
+  -- 2. RATE LIMITER: Máximo 5 archivos en la última 1 hora
+  (
+    SELECT count(*)
+    FROM storage.objects
+    WHERE bucket_id = 'payment_vouchers'
+    AND owner = auth.uid()
+    AND created_at > (now() - interval '1 hour') -- Ventana de tiempo
+  ) < 10 -- Límite de 10 archivos
 );
 --[][][][][][[][][][][][][][][][][][][[][][][][][][][][][][][][[][][][][][][][][][][]
 
@@ -162,6 +203,8 @@ CREATE POLICY "Only admins can manage type_facilities" ON public.type_facilities
 
 CREATE POLICY "Enable read access for all users" ON public.type_facilities FOR SELECT USING (true);
 
+--<><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+
 -- TABLE facilities
 
 create table public.facilities (
@@ -184,6 +227,8 @@ create table public.facilities (
 CREATE POLICY "Only admins can manage facilities" ON public.facilities USING (public.has_role(auth.uid(), 'admin'::public.app_role));
 
 CREATE POLICY "Enable read access for all users" ON public.facilities FOR SELECT USING (true);
+
+--<><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
 -- TABLE facility_hours
 
@@ -225,6 +270,41 @@ alter table public.facility_hours enable row level security;
 CREATE POLICY "Only admins can manage facility_hours" ON public.facility_hours USING (public.has_role(auth.uid(), 'admin'::public.app_role));
 
 create policy "Public view hours" on public.facility_hours for select using (true);
+
+--<><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+
+-- TABLE facility_blockages
+
+-- Tabla para festivos, mantenimientos o bloqueos especiales
+create table public.facility_blockages (
+  id uuid not null default gen_random_uuid() primary key,
+  facility_id uuid references public.facilities(id) on delete cascade,
+  blocked_period tsrange not null, -- El rango de tiempo bloqueado
+  reason text, -- Ej: "Feriado Nacional", "Mantenimiento Pista"
+  created_at timestamp with time zone default now(),
+  
+  -- Constraint para evitar que se creen bloqueos superpuestos (opcional pero recomendado)
+  constraint no_overlapping_blocks EXCLUDE using gist (
+    facility_id with =,
+    blocked_period with &&
+  )
+);
+
+-- Índice para acelerar la búsqueda de bloqueos
+create index blockages_range_idx on public.facility_blockages using gist (facility_id, blocked_period);
+
+--{RLS}
+
+alter table public.facility_blockages enable row level security;
+
+-- Los usuarios normales pueden leer (para ver por qué está cerrado si hicieras una UI de calendario)
+create policy "Public view blockages" on public.facility_blockages for select using (true);
+
+-- Solo admins pueden crear/borrar bloqueos
+create policy "Admins manage blockages" on public.facility_blockages 
+  using (public.has_role(auth.uid(), 'admin'::public.app_role));
+
+--<><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
 -- TABLE reservations
 
@@ -326,6 +406,8 @@ begin
             select 
               curr_ts::time, 
               (curr_ts + slot_interval)::time,
+              (
+              -- 1. Verificar si el slot está disponible
               not exists (
                 select 1 
                 from public.reservations r
@@ -341,7 +423,20 @@ begin
                     (r.status = 'pending' and (r.expires_at is null or r.expires_at > now()))
                 )
                 and r.booked_period && tsrange(curr_ts, curr_ts + slot_interval)
-              );
+              )
+              
+              AND
+              
+              -- 2. Verificar que NO exista un bloqueo (Festivo/Mantenimiento)
+              not exists (
+                select 1
+                from public.facility_blockages b
+                where b.facility_id = input_facility_id
+                -- El operador && verifica si los rangos se solapan
+                and b.blocked_period && tsrange(curr_ts, curr_ts + slot_interval)
+              )
+            );
+              
               
         end if; -- Fin del check de tiempo futuro
           
@@ -354,6 +449,28 @@ begin
   end loop;
 end;
 $$;
+
+-- Función para cancelar reservas pendientes que expiraron
+create or replace function public.cancel_expired_reservations()
+returns void
+language plpgsql
+security definer
+as $$
+begin
+  update public.reservations
+  set status = 'cancelled',
+      updated_at = now()
+  where status = 'pending'
+  and expires_at is not null
+  and expires_at < now();
+end;
+$$;
+
+select cron.schedule(
+  'cancel_expired_reservations',
+  '0 * * * *',
+  $$ select public.cancel_expired_reservations(); $$
+);
 
 --{RLS}
 
@@ -429,24 +546,52 @@ WITH CHECK (
 
 --------------------------------------------------------------------------MEMBRESÍAS - SUSCRIPCIONES
 
+-- TABLE membership_products
+
+create table public.membership_products (
+  id uuid not null default gen_random_uuid() primary key,
+  name text not null, -- Ej: "Plan Gold", "Plan Platinum"
+  description text null,
+  features jsonb not null default '[]'::jsonb, -- Ej: ["Piscina", "Toalla"]
+  image_url text null, -- Url de la imagen del plan
+  active boolean default true,
+  created_at timestamp with time zone default now(),
+  updated_at timestamp with time zone default now()
+);
+
+--{RLS}
+
+-- Habilitar RLS
+alter table public.membership_products enable row level security;
+
+-- 1. Todo el mundo puede ver los productos (incluso sin login)
+create policy "Productos son públicos"
+on public.membership_products
+for select
+using ( true );
+
+-- 2. Solo Admin puede crear/editar/borrar productos
+create policy "Admin gestiona productos"
+on public.membership_products
+for all
+using (public.has_role(auth.uid(), 'admin'::public.app_role));
+
+--<><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+
 -- TABLE membership_plans
 
--- Define qué vendes (Ej: "Plan Mensual", "Plan Anual")
 create table public.membership_plans (
   id uuid not null default gen_random_uuid() primary key,
-  name text not null,
-  description text null,
+  product_id uuid not null references public.membership_products(id) on delete cascade,
+  
+  name text null, -- Opcional, Ej: "Mensual", "Anual (Ahorra 20%)"
   price numeric(10, 2) not null,
   currency text default 'USD',
-  duration_days integer not null, -- 30 para mensual, 365 para anual
+  duration interval not null, -- '1 month', '1 year'
   
-  -- Aquí guardas las características visuales:
-  -- Ej: ["Acceso a piscina", "10% dto en tienda", "Toalla gratis"]
-  features jsonb not null default '[]'::jsonb, 
-  
-  image_url text null, -- Url de la imagen del plan
   is_active boolean default true,
-  created_at timestamp with time zone default now()
+  created_at timestamp with time zone default now(),
+  updated_at timestamp with time zone default now()
 );
 
 --{RLS}
@@ -465,6 +610,8 @@ create policy "Admin gestiona planes"
 on public.membership_plans
 for all
 using (public.has_role(auth.uid(), 'admin'::public.app_role));
+
+--<><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
 -- TABLE subscriptions
 
@@ -553,6 +700,8 @@ using (public.has_role(auth.uid(), 'admin'::public.app_role));
 
 --------------------------------------------------------------------------PAYMENTS
 
+-- TABLE payments
+
 -- TABLA CENTRAL DE PAGOS (Nuevo)
 -- Aquí registras TODO: Pago de membresía, pago de reserva, o pago de curso.
 create table public.payments (
@@ -565,7 +714,7 @@ create table public.payments (
   proof_url text null, -- Para tus comprobantes manuales
   
   -- Referencias Polimórficas (Saber qué se pagó)
-  --subscription_id uuid references subscriptions(id),
+  subscription_id uuid references subscriptions(id),
   reservation_id uuid references reservations(id),
   --enrollment_id uuid references enrollments(id),
   
@@ -615,6 +764,46 @@ after update on public.payments
 for each row
 when (old.proof_url is null and new.proof_url is not null)
 execute function public.handle_payment_proof();
+
+-- 1. Función de sincronización
+create or replace function public.sync_reservation_status_on_payment()
+returns trigger
+language plpgsql
+security invoker -- Importante: Ejecuta con permisos propios, RLS bloqueará lo que no deba
+as $$
+begin
+  -- Solo actuamos si el pago está vinculado a una reserva
+  if new.reservation_id is not null then
+
+    -- CASO 1: Pago CONFIRMADO ('paid') -> Confirmar Reserva
+    if new.status = 'paid' then
+      update public.reservations
+      set 
+        status = 'confirmed',
+        -- Limpiamos la expiración por seguridad, aunque el status 'confirmed' ya la protege
+        expires_at = null 
+      where id = new.reservation_id;
+
+    -- CASO 2: Pago RECHAZADO/FALLIDO ('failed') -> Cancelar Reserva
+    -- (Opcional: puedes agregar 'refunded' aquí también si quisieras)
+    elsif new.status = 'failed' then 
+      update public.reservations
+      set status = 'cancelled'
+      where id = new.reservation_id;
+    end if;
+
+  end if;
+
+  return new;
+end;
+$$;
+
+-- 2. Trigger que vigila cambios en la tabla PAYMENTS
+create trigger update_reservation_on_payment_change
+after update of status on public.payments
+for each row
+when (old.status is distinct from new.status) -- Solo si el estado cambió realmente
+execute function public.sync_reservation_status_on_payment();
 
 --{RLS}
 
