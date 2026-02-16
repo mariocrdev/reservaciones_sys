@@ -50,6 +50,7 @@ export function NewReservationDialog({ open, onOpenChange }) {
     selectedFacility?.id,
     date,
   );
+  console.log("🚀 ~ NewReservationDialog ~ slots:", slots)
   const createReservationMutation = useCreateReservation();
 
   const handleClose = () => {
@@ -98,7 +99,7 @@ export function NewReservationDialog({ open, onOpenChange }) {
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="sm:max-w-4xl  w-full">
         <DialogHeader>
           <DialogTitle>Nueva Reservación - Paso {step} de 3</DialogTitle>
         </DialogHeader>
@@ -113,11 +114,11 @@ export function NewReservationDialog({ open, onOpenChange }) {
                   <Loader2 className="animate-spin h-6 w-6" />
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-2 max-h-[60vh] overflow-y-auto px-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-[60vh] overflow-y-auto px-2">
                   {facilities?.map((facility) => (
                     <div
                       key={facility.id}
-                      className={`flex flex-col overflow-hidden border rounded-lg cursor-pointer transition-colors ${
+                      className={`flex self-start flex-col overflow-hidden border rounded-lg cursor-pointer transition-colors ${
                         selectedFacility?.id === facility.id
                           ? "border-primary bg-primary/5 ring-1 ring-primary"
                           : "hover:bg-muted"

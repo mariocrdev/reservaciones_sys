@@ -52,6 +52,8 @@ import {
 import { Loader2, CreditCard, Timer } from "lucide-react";
 import { useCreatePayment } from "@/hooks/usePayments";
 
+import { PaymentUploadDialog } from "@/components/reservations/PaymentUploadDialog";
+
 const ReservationCard = ({ res }) => {
   const { user } = useAuth();
   const cancelMutation = useCancelReservation();
@@ -61,6 +63,7 @@ const ReservationCard = ({ res }) => {
   const [isExpiredLocal, setIsExpiredLocal] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [isPaymentDetailsOpen, setIsPaymentDetailsOpen] = useState(false);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
 
   // Check for any associated payment
   const payment =
@@ -121,22 +124,6 @@ const ReservationCard = ({ res }) => {
     }
   };
 
-  const handlePayment = async () => {
-    try {
-      await createPaymentMutation.mutateAsync({
-        user_id: user.id,
-        reservation_id: res.id,
-        amount: res.total_price,
-        payment_method: "manual_transfer",
-        proof_url:
-          "https://dlungwwfskliaiatormh.supabase.co/storage/v1/object/public/public_assets/backgroundAuth.svg",
-      });
-      toast.success("Pago registrado. Esperando validación.");
-    } catch (error) {
-      toast.error("Error al registrar el pago");
-      console.error(error);
-    }
-  };
 
   const formatPeriod = (period) => {
     if (!period) return { date: "", time: "" };
@@ -221,6 +208,7 @@ const ReservationCard = ({ res }) => {
 
     return <Badge variant="secondary">{res.status}</Badge>;
   };
+
 
   return (
     <>
@@ -315,14 +303,9 @@ const ReservationCard = ({ res }) => {
               <div className="pt-2">
                 <Button
                   className="w-full bg-green-600 hover:bg-green-700 text-white"
-                  onClick={handlePayment}
-                  disabled={createPaymentMutation.isPending}
+                  onClick={() => setIsPaymentDialogOpen(true)}
                 >
-                  {createPaymentMutation.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <CreditCard className="mr-2 h-4 w-4" />
-                  )}
+                  <CreditCard className="mr-2 h-4 w-4" />
                   Pagar
                 </Button>
               </div>
@@ -406,7 +389,7 @@ const ReservationCard = ({ res }) => {
                     <img
                       src={payment.proof_url}
                       alt="Comprobante de pago"
-                      className="w-full h-auto max-h-[300px] object-contain rounded-sm"
+                      className="w-full h-auto max-h-75 object-contain rounded-sm"
                     />
                   </div>
                 </div>
@@ -415,6 +398,12 @@ const ReservationCard = ({ res }) => {
           </DialogContent>
         </Dialog>
       )}
+
+      <PaymentUploadDialog
+        open={isPaymentDialogOpen}
+        onOpenChange={setIsPaymentDialogOpen}
+        reservation={res}
+      />
     </>
   );
 };

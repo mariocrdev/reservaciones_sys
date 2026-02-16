@@ -81,6 +81,7 @@ export default function MyProfile() {
 
     try {
       let imageUrl = profile?.profile_image_url;
+      
 
       if (selectedImage) {
         imageUrl = await uploadImage.mutateAsync({
@@ -88,6 +89,8 @@ export default function MyProfile() {
           file: selectedImage,
         });
       }
+
+      console.log("🚀 ~ handleSubmit ~ imageUrl:", imageUrl)
 
       const dataToUpdate = {
         ...formData,

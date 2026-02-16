@@ -47,43 +47,43 @@ const userNavItems = [
   {
     title: "Panel",
     url: "/dashboard",
-    icon: "solar:home-smile-angle-bold-duotone",
+    icon: "lucide:layout-dashboard",
     description: "Vista general de tu cuenta",
   },
+  // {
+  //   title: "Cursos",
+  //   url: "/courses",
+  //   icon: "solar:book-bookmark-bold-duotone",
+  //   description: "Inscripciones a cursos",
+  // },
   {
-    title: "Instalaciones",
-    url: "/facilities",
-    icon: "solar:tennis-ball-bold-duotone",
-    description: "Reserva canchas y espacios",
-  },
-  {
-    title: "Cursos",
-    url: "/courses",
-    icon: "solar:book-bookmark-bold-duotone",
-    description: "Inscripciones a cursos",
+    title: "Membresías",
+    url: "/memberships",
+    icon: "lucide:credit-card",
+    description: "Adquiere y gestiona tus membresías",
   },
   {
     title: "Mis Reservaciones",
     url: "/my-reservations",
-    icon: "solar:calendar-date-bold-duotone",
+    icon: "fluent-mdl2:reservation-orders",
     description: "Gestiona tus reservas de instalaciones",
   },
   {
     title: "Inscripciones",
     url: "/enrolments",
-    icon: "solar:clipboard-list-bold-duotone",
+    icon: "lucide:clipboard-list",
     description: "Gestiona tus inscripciones a los cursos",
   },
   {
     title: "Mi Perfil",
     url: "/profile",
-    icon: "solar:user-circle-bold-duotone",
+    icon: "lucide:user",
     description: "Gestiona tu información",
   },
   {
-    title: "Niños",
-    url: "/profile/childrens",
-    icon: "solar:users-group-rounded-bold-duotone",
+    title: "Mi familia",
+    url: "/profile/family",
+    icon: "lucide:users",
     description: "Gestiona la informacion de tus niños",
   },
 ];
@@ -106,6 +106,12 @@ const adminNavItems = [
     url: "/admin/memberships",
     icon: "solar:tag-price-bold-duotone",
     description: "Gestión de planes de membresía",
+  },
+  {
+    title: "Pagos",
+    url: "/admin/payments",
+    icon: "solar:bill-list-bold-duotone",
+    description: "Gestión de pagos y comprobantes",
   },
   {
     title: "Instalaciones",
@@ -197,7 +203,9 @@ export function AppSidebar({ children }) {
     if (location.pathname === "/admin") return "Administración";
     if (location.pathname === "/admin/memberships")
       return "Planes de Membresía";
+    if (location.pathname === "/admin/payments") return "Gestión de Pagos";
     if (location.pathname === "/my-reservations") return "Mis Reservaciones";
+    if (location.pathname === "/memberships") return "Membresías";
     if (location.pathname === "/courses") return "Cursos";
     if (location.pathname === "/enrolments") return "Inscripciones";
     if (location.pathname === "/profile/childrens") return "Niños";
@@ -273,9 +281,8 @@ export function AppSidebar({ children }) {
                                   <span>{item.title}</span>
                                 </div>
                                 <ChevronRight
-                                  className={`h-4 w-4 transition-transform ${
-                                    isReservasExpanded ? "rotate-90" : ""
-                                  }`}
+                                  className={`h-4 w-4 transition-transform ${isReservasExpanded ? "rotate-90" : ""
+                                    }`}
                                 />
                               </SidebarMenuButton>
                               {isReservasExpanded && (
@@ -322,9 +329,8 @@ export function AppSidebar({ children }) {
                                   <span>{item.title}</span>
                                 </div>
                                 <ChevronRight
-                                  className={`h-4 w-4 transition-transform ${
-                                    isCoursesExpanded ? "rotate-90" : ""
-                                  }`}
+                                  className={`h-4 w-4 transition-transform ${isCoursesExpanded ? "rotate-90" : ""
+                                    }`}
                                 />
                               </SidebarMenuButton>
                               {isCoursesExpanded && (
@@ -511,7 +517,7 @@ export function AppSidebar({ children }) {
         </SidebarFooter>
       </Sidebar>
       <div className="flex flex-col flex-1">
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur supports-backdrop-filter:bg-background/60">
+        <header className="sticky top-0 z-5 flex h-16 items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur supports-backdrop-filter:bg-background/60">
           <div className="flex items-center gap-2">
             <SidebarTrigger />
             <div className="font-semibold">{getPageTitle()}</div>

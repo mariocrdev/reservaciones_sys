@@ -19,6 +19,7 @@ import AppLayout from "@/components/sidebar/AppLayout";
 // import AdminFacilities from "@/pages/admin/AdminFacilities";
 import MyReservations from "@/pages/user/MyReservations";
 import MyProfile from "@/pages/user/MyProfile";
+import FamilyMembers from "@/pages/user/FamilyMembers";
 // import AdminSchedules from "@/pages/admin/reservationsAdmin/AdminSchedules"
 // import AdminReservations from "@/pages/admin/reservationsAdmin/AdminReservations"
 // import AdminCourses from "@/pages/admin/coursesAdmin/AdminCourses"
@@ -31,7 +32,11 @@ import MyProfile from "@/pages/user/MyProfile";
 import { RefreshCw } from "lucide-react";
 import UsersManagement from "@/pages/admin/UsersManagement";
 import AdminFacilities from "@/pages/admin/AdminFacilities";
-import PlansManager from "@/components/admin/memberships/PlansManager";
+import MembershipsManager from "@/components/admin/memberships/MembershipsManager";
+import ReservationsManagement from "@/pages/admin/ReservationsManagement";
+import PaymentsManagement from "@/pages/admin/PaymentsManagement";
+
+import MembershipsPage from "@/pages/user/MembershipsPage";
 
 const AppRoutes = () => {
   const { session, loading } = useAuth();
@@ -53,9 +58,13 @@ const AppRoutes = () => {
           <Route path="/dashboard" element={<>gfdgfd</>} />
           <Route path="/admin/users" element={<UsersManagement />} />
           <Route path="/admin/facilities" element={<AdminFacilities />} />
-          <Route path="/admin/memberships" element={<PlansManager />} />
+          <Route path="/admin/memberships" element={<MembershipsManager />} />
+          <Route path="/admin/reservations" element={<ReservationsManagement />} />
+          <Route path="/admin/payments" element={<PaymentsManagement />} />
+          <Route path="/memberships" element={<MembershipsPage />} />
           <Route path="/my-reservations" element={<MyReservations />} />
           <Route path="/profile" element={<MyProfile />} />
+          <Route path="/profile/family" element={<FamilyMembers />} />
           {/* <Route path="/facilities" element={<Facilities />} />
         <Route path="/facilities/:type/:id" element={<FacilityDetail/>} />
         <Route path="/courses" element={<Courses/>} />

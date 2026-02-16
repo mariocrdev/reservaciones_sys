@@ -4,10 +4,13 @@ export const PaymentsService = {
   // Create a new payment record
   async createPayment({
     user_id,
-    reservation_id,
+    reservation_id = null,
+    subscription_id = null,
+    plan_id = null,
     amount,
     payment_method,
     proof_url = null,
+    status = "pending", // Allow overriding status if needed, but default pending
   }) {
     const { data, error } = await supabase
       .from("payments")
@@ -15,10 +18,12 @@ export const PaymentsService = {
         {
           user_id,
           reservation_id,
+          subscription_id,
+          plan_id,
           amount,
           payment_method,
           proof_url,
-          status: "pending",
+          status,
         },
       ])
       .select()

@@ -6,7 +6,8 @@ export const useCreatePayment = () => {
   return useMutation({
     mutationFn: (data) => PaymentsService.createPayment(data),
     onSuccess: () => {
-      queryClient.invalidateQueries(["user-reservations"]); // Invalidate to update status if backend trigger fires
+      queryClient.invalidateQueries(["user-reservations"]);
+      queryClient.invalidateQueries(["user-subscriptions"]);
     },
   });
 };

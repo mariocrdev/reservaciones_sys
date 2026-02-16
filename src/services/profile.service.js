@@ -101,6 +101,6 @@ export const ProfileService = {
       .from("profile")
       .getPublicUrl(fileName);
 
-    return publicUrlData.publicUrl;
+    return `${publicUrlData.publicUrl}?t=${Date.now()}`;
   },
 };

@@ -118,6 +118,46 @@ CREATE POLICY "Users can update their own profile" ON public.profiles FOR UPDATE
 
 CREATE POLICY "Users can view their own profile" ON public.profiles FOR SELECT USING ((auth.uid() = id));
 
+--<><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+
+-- TABLE family_members
+
+-- Tabla para registrar hijos o dependientes
+create table public.family_members (
+  id uuid not null default gen_random_uuid() primary key,
+  parent_id uuid not null references public.profiles(id) on delete cascade,
+  
+  first_name text not null,
+  last_name text not null,
+  date_of_birth date not null,
+  gender text null check (gender in ('M', 'F', 'Other')),
+  
+  -- Metadatos opcionales (ej: alergias, notas médicas para la natación)
+  medical_notes text null,
+  
+  created_at timestamp with time zone default now(),
+  updated_at timestamp with time zone default now()
+);
+
+-- Index para búsquedas rápidas
+create index idx_family_members_parent on public.family_members(parent_id);
+
+--{RLS} family_members
+alter table public.family_members enable row level security;
+
+-- 1. Padres gestionan a sus hijos (CRUD completo)
+create policy "Parents manage their children"
+on public.family_members
+for all
+using ( auth.uid() = parent_id )
+with check ( auth.uid() = parent_id );
+
+-- 2. Admins ven todo
+create policy "Admins view all children"
+on public.family_members
+for select
+using ( public.has_role(auth.uid(), 'admin'::public.app_role) );
+
 --------------------------------------------------------------------------USER ROLES
 
 create table public.user_roles (
@@ -620,83 +660,258 @@ create table public.subscriptions (
   id uuid not null default gen_random_uuid() primary key,
   user_id uuid not null references public.profiles(id) on delete cascade,
   plan_id uuid not null references public.membership_plans(id),
+  family_member_id uuid references public.family_members(id) on delete restrict, -- Opcional, para suscripciones de hijos
   
   status public.subscription_status not null default 'pending',
   
   -- Fechas críticas
-  start_date timestamp with time zone not null default now(),
-  end_date timestamp with time zone not null, -- Se llenará sola con el trigger
+  start_date timestamp with time zone, 
+  end_date timestamp with time zone, 
   
   auto_renew boolean default false,
   cancellation_reason text null, -- Útil para saber por qué se van
   
+  cancelled_at timestamp with time zone null,
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now()
 );
 
-create or replace function public.calculate_subscription_end_date()
+CREATE UNIQUE INDEX idx_unique_owner_active_subscription
+ON public.subscriptions (user_id, plan_id)
+WHERE status IN ('active', 'inactive', 'past_due', 'pending')  -- Solo revisa las activas/pendientes
+AND family_member_id IS NULL;         -- Solo aplica cuando es para sí mismo
+
+CREATE UNIQUE INDEX idx_unique_family_active_subscription
+ON public.subscriptions (family_member_id, plan_id)
+WHERE status IN ('active', 'inactive', 'past_due', 'pending')
+AND family_member_id IS NOT NULL;
+
+--{RLS}
+
+-- A. Trigger para INSERT (Creación)
+
+-- Aunque el usuario intente enviar status: 'active' o end_date: '2030-01-01', este trigger forzará los valores por defecto. Así solo "aceptamos" realmente user_id y plan_id.
+
+create or replace function public.sanitize_new_subscription()
 returns trigger
 language plpgsql
 security definer
 as $$
-declare
-  plan_duration int;
 begin
-  -- 1. Buscamos cuántos días dura el plan seleccionado
-  select duration_days into plan_duration
-  from public.membership_plans
-  where id = new.plan_id;
+  -- Si es Admin, dejamos pasar todo tal cual
+  if public.has_role(auth.uid(), 'admin'::public.app_role) then
+    return new;
+  end if;
 
-  -- 2. Calculamos la fecha final sumando los días a la fecha de inicio
-  -- new.start_date suele ser 'now()', pero si permites fechas futuras, esto lo respeta.
-  new.end_date := new.start_date + (plan_duration || ' days')::interval;
-
+  -- Si es Usuario normal, FORZAMOS los valores internos
+  -- Ignoramos cualquier cosa que hayan enviado en estos campos:
+  new.status := 'pending';
+  new.auto_renew := false; -- O true, según tu lógica de negocio default
+  new.cancellation_reason := null;
+  new.cancelled_at := null;
+  
+  -- Las fechas se calculan después con tu otro trigger 'set_subscription_dates',
+  -- así que aquí nos aseguramos que start_date sea 'now()' si intentaron manipularla.
+  new.start_date := now();
+  
   return new;
 end;
 $$;
 
--- Disparador: Antes de insertar una suscripción, calcula la fecha
-create trigger set_subscription_dates
+create trigger trigger_sanitize_insert_subscription
 before insert on public.subscriptions
 for each row
-execute function public.calculate_subscription_end_date();
+execute function public.sanitize_new_subscription();
 
---{RLS}
+-- B. Trigger para UPDATE (Cancelación)
+
+-- Este trigger verifica que, si es un usuario normal, solo esté modificando los campos de cancelación. Si intenta cambiar el plan_id o status, el cambio será ignorado o rechazado.
+
+create or replace function public.restrict_subscription_updates()
+returns trigger
+language plpgsql
+security definer
+as $$
+begin
+  -- 1. Si es Admin, tiene permiso total
+  if public.has_role(auth.uid(), 'admin'::public.app_role) then
+    return new;
+  end if;
+
+  -- 2. Si es Usuario normal, protegemos los campos críticos
+  -- Si intenta cambiar algo que no debe, lo revertimos al valor OLD (original)
+  if new.plan_id is distinct from old.plan_id then new.plan_id := old.plan_id; end if;
+  if new.user_id is distinct from old.user_id then new.user_id := old.user_id; end if;
+  if new.status is distinct from old.status then new.status := old.status; end if;
+  if new.start_date is distinct from old.start_date then new.start_date := old.start_date; end if;
+  if new.end_date is distinct from old.end_date then new.end_date := old.end_date; end if;
+  if new.auto_renew is distinct from old.auto_renew then new.auto_renew := old.auto_renew; end if;
+
+  -- 3. Validación lógica extra:
+  -- Solo permitimos que 'cancelled_at' se establezca si también envían una razón
+  -- Opcional: Podrías forzar new.cancelled_at := now() para que no mientan con la fecha.
+  
+  return new;
+end;
+$$;
+
+create trigger trigger_restrict_update_subscription
+before update on public.subscriptions
+for each row
+execute function public.restrict_subscription_updates();
 
 -- Habilitar RLS
 alter table public.subscriptions enable row level security;
 
--- 1. Ver suscripciones: Dueño o Admin
-create policy "Ver suscripciones propias o admin"
-on public.subscriptions
-for select
+-- 1. SELECT: Ver sus propias suscripciones (o Admin ve todas)
+create policy "select_subscriptions"
+on public.subscriptions for select
 using (
   auth.uid() = user_id
-  or
-  public.has_role(auth.uid(), 'admin'::public.app_role)
+  or public.has_role(auth.uid(), 'admin'::public.app_role)
 );
 
--- 2. Crear suscripción: Usuario para sí mismo (o Admin para otros)
-create policy "Crear suscripción"
+-- 2. INSERT: Crear suscripción a su nombre
+-- El trigger 'sanitize' se encargará de ignorar campos extra
+create policy "insert_strict_with_limit"
 on public.subscriptions
 for insert
 with check (
+  -- 1. Seguridad de Propiedad
   auth.uid() = user_id
-  or
-  public.has_role(auth.uid(), 'admin'::public.app_role)
+  
+  AND
+  
+  -- 2. VALIDACIÓN DE LÍMITE (QUOTA)
+  -- Solo esto es necesario aquí, porque el trigger no puede bloquear la inserción basado en conteos,
+  -- pero la RLS sí puede.
+  (
+    SELECT count(*)
+    FROM public.subscriptions
+    WHERE user_id = auth.uid()
+  ) < 10
 );
 
--- 3. Actualizar: Admin total, Usuario restringido
--- Nota: Para seguridad real del status, usa la lógica de triggers de pago que vimos antes.
--- Esta política permite al Admin arreglar cualquier cosa.
-create policy "Admin actualiza todo"
-on public.subscriptions
-for update
+-- 3. UPDATE: Cancelar su propia suscripción
+-- El trigger 'restrict' asegurará que solo toquen cancellation_reason/cancelled_at
+create policy "update_subscriptions"
+on public.subscriptions for update
+using (
+  auth.uid() = user_id
+  or public.has_role(auth.uid(), 'admin'::public.app_role)
+);
+
+-- 4. DELETE: Solo Admin (Opcional, normalmente no borras historial financiero)
+-- create policy "delete_subscriptions"
+-- on public.subscriptions for delete
+-- using (
+--   public.has_role(auth.uid(), 'admin'::public.app_role)
+-- );
+
+--------------------------------------------------------------------------COURSES - ENROLLMENTS
+
+-- 1. Los Cursos (La definición general)
+create table public.courses (
+  id uuid not null default gen_random_uuid() primary key,
+  name text not null,
+  description text null,
+  image_url text null,
+  category text null, -- Ej: 'Natación', 'Tenis'
+  is_active boolean default true,
+  created_at timestamp with time zone default now()
+);
+
+--{RLS}
+
+alter table public.courses enable row level security;
+
+create policy "Courses are public" on public.courses for select using (true);
+
+-- Solo Admin puede crear/editar/borrar cursos
+create policy "Admin manage courses"
+on public.courses
+for all
 using (public.has_role(auth.uid(), 'admin'::public.app_role));
 
--- Opcional: Permitir al usuario cancelar su auto-renovación
--- (Requiere que definas bien qué columnas permites tocar en tu frontend)
--- create policy "Usuario gestiona renovación" ...
+--<><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+
+-- 2. Horarios/Cupos (Las instancias del curso)
+create table public.course_slots (
+  id uuid not null default gen_random_uuid() primary key,
+  course_id uuid not null references public.courses(id) on delete cascade,
+  instructor_id uuid references public.profiles(id), -- Instructor asignado
+  facility_id uuid references public.facilities(id), -- Lugar donde se dicta
+  
+  -- Horario (ej: Lunes y Miércoles 17:00 - 18:00)
+  schedule_description text not null, 
+  
+  -- Gestión de Cupos
+  max_capacity integer not null default 10,
+  current_enrolments integer not null default 0,
+  
+  -- Precio del curso completo o ciclo
+  price numeric(10, 2) not null,
+  
+  start_date date not null, -- Inicio del ciclo
+  end_date date not null,   -- Fin del ciclo
+  
+  is_active boolean default true,
+  created_at timestamp with time zone default now()
+);
+
+--{RLS}
+
+alter table public.course_slots enable row level security;
+
+create policy "Slots are public" on public.course_slots for select using (true);
+
+-- Solo Admin puede crear/editar/borrar slots
+create policy "Admin manage course slots"
+on public.course_slots
+for all
+using (public.has_role(auth.uid(), 'admin'::public.app_role));
+
+--<><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+
+create table public.enrolments (
+  id uuid not null default gen_random_uuid() primary key,
+  course_slot_id uuid not null references public.course_slots(id),
+  
+  -- Quién se inscribe
+  profile_id uuid references public.profiles(id), -- Si es el adulto
+  child_id uuid references public.family_members(id), -- Si es un hijo
+
+  enrolled_by uuid references public.profiles(id), -- Quién hizo la inscripción (puede ser el mismo profile_id o un admin)
+  
+  status text not null default 'pending' check (status in ('pending', 'confirmed', 'cancelled', 'completed')),
+  
+  notes text null,
+  created_at timestamp with time zone default now(),
+  updated_at timestamp with time zone default now(),
+
+  -- Constraint: O es un perfil o es un hijo, no ambos ni ninguno
+  constraint enrolment_target_check check (
+    (profile_id is null and child_id is not null) or 
+    (profile_id is not null and child_id is null)
+  )
+);
+
+--{RLS}
+
+alter table public.enrolments enable row level security;
+
+create policy "Users can view own enrolments"
+on public.enrolments for select
+using (auth.uid() = enrolled_by);
+
+create policy "Users can enrol"
+on public.enrolments for insert
+with check (
+  auth.uid() = enrolled_by 
+  and status = 'pending'
+  -- Validar cupos antes de insertar (opcional pero recomendado)
+  and (select current_enrolments < max_capacity from public.course_slots where id = course_slot_id)
+);
 
 --------------------------------------------------------------------------PAYMENTS
 
@@ -715,8 +930,9 @@ create table public.payments (
   
   -- Referencias Polimórficas (Saber qué se pagó)
   subscription_id uuid references subscriptions(id),
+  plan_id uuid REFERENCES public.membership_plans(id),
   reservation_id uuid references reservations(id),
-  --enrollment_id uuid references enrollments(id),
+  enrolment_id uuid references enrolments(id),
   
   created_at timestamp with time zone default now(),
   updated_at timestamp with time zone default now()
@@ -805,6 +1021,100 @@ for each row
 when (old.status is distinct from new.status) -- Solo si el estado cambió realmente
 execute function public.sync_reservation_status_on_payment();
 
+-- Función para activar suscripción/membresia al pagar
+CREATE OR REPLACE FUNCTION public.handle_subscription_payment_activation()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY INVOKER
+AS $$
+DECLARE
+  paid_plan_duration interval;
+  target_plan_id uuid;
+  current_sub record;
+BEGIN
+  -- Solo actuamos si el pago:
+  -- 1. Tiene una suscripción asociada
+  -- 2. Pasó a estado 'paid'
+  -- 3. Antes NO estaba 'paid' (evita dispararse doble si editas otra cosa)
+  IF NEW.subscription_id IS NOT NULL 
+     AND NEW.status = 'paid' 
+     AND (OLD.status IS DISTINCT FROM 'paid') THEN
+
+    -- A. Obtenemos datos de la suscripción actual
+    SELECT * INTO current_sub 
+    FROM public.subscriptions 
+    WHERE id = NEW.subscription_id;
+
+    -- B. Determinamos el Plan y su Duración
+    -- Prioridad: Usamos el plan_id del pago (si existe), sino el de la suscripción
+    target_plan_id := COALESCE(NEW.plan_id, current_sub.plan_id);
+    
+    SELECT duration INTO paid_plan_duration
+    FROM public.membership_plans
+    WHERE id = target_plan_id;
+
+    -- C. ACTUALIZACIÓN INTELIGENTE (La Lógica de Negocio)
+    UPDATE public.subscriptions
+    SET 
+      status = 'active',
+      plan_id = target_plan_id, -- Actualizamos el plan (por si fue un Upgrade)
+      
+      -- 1. FECHA DE INICIO (start_date)
+      -- Si la suscripción sigue viva (end_date > now), NO tocamos el inicio (mantiene antigüedad).
+      -- Si es nueva o ya venció, reseteamos el inicio a HOY.
+      start_date = CASE 
+          WHEN current_sub.end_date > now() THEN current_sub.start_date 
+          ELSE now() 
+      END,
+
+      -- 2. FECHA DE FIN (end_date) - Aquí está la magia
+      -- Comparamos "Ahora" vs "Fecha Vencimiento Actual".
+      -- Tomamos la mayor (GREATEST) y le sumamos la duración pagada.
+      end_date = GREATEST(now(), COALESCE(current_sub.end_date, now())) + paid_plan_duration,
+      
+      updated_at = now()
+    WHERE id = NEW.subscription_id;
+
+  END IF;
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trigger_activate_subscription
+AFTER UPDATE OF status ON public.payments
+FOR EACH ROW
+EXECUTE FUNCTION public.handle_subscription_payment_activation();
+
+-- Función para confirmar inscripción al pagar el curso
+create or replace function public.handle_enrolment_payment_confirmation()
+returns trigger
+language plpgsql
+security definer
+as $$
+begin
+  if new.enrolment_id is not null and new.status = 'paid' and (old.status is distinct from 'paid') then
+    
+    -- 1. Confirmar la inscripción
+    update public.enrolments
+    set status = 'confirmed', updated_at = now()
+    where id = new.enrolment_id;
+
+    -- 2. Aumentar el contador de inscritos en el slot
+    update public.course_slots
+    set current_enrolments = current_enrolments + 1
+    where id = (select course_slot_id from public.enrolments where id = new.enrolment_id);
+
+  end if;
+  return new;
+end;
+$$;
+
+create trigger trigger_confirm_enrolment_on_payment
+after update of status on public.payments
+for each row
+execute function public.handle_enrolment_payment_confirmation();
+
 --{RLS}
 
 -- Habilitar RLS
@@ -839,3 +1149,122 @@ with check (
    -- and amount = old.amount 
 );
 --------------------------------------------------------------------------FIN
+
+
+create table public.enrolments (
+  id uuid not null default gen_random_uuid (),
+  course_id uuid not null,
+  profile_id uuid null,
+  child_id uuid null,
+  enrolled_by uuid not null,
+  status text not null default 'pending'::text,
+  enrolled_at timestamp with time zone not null default now(),
+  confirmed_at timestamp with time zone null,
+  cancelled_at timestamp with time zone null,
+  completed_at timestamp with time zone null,
+  notes text null,
+  course_slot_id uuid not null,
+  constraint enrolments_pkey primary key (id),
+  constraint enrolments_profile_id_fkey foreign KEY (profile_id) references profiles (id),
+  constraint enrolments_child_id_fkey foreign KEY (child_id) references profile_children (id),
+  constraint enrolments_course_id_fkey foreign KEY (course_id) references courses (id),
+  constraint enrolments_course_slot_id_fkey foreign KEY (course_slot_id) references course_slots (id) on update RESTRICT on delete RESTRICT,
+  constraint enrolments_enrolled_by_fkey foreign KEY (enrolled_by) references profiles (id),
+  constraint enrolments_status_check check (
+    (
+      status = any (
+        array[
+          'pending'::text,
+          'confirmed'::text,
+          'cancelled'::text,
+          'completed'::text
+        ]
+      )
+    )
+  ),
+  constraint enrolments_check check (
+    (
+      (
+        (profile_id is null)
+        and (child_id is not null)
+      )
+      or (
+        (profile_id is not null)
+        and (child_id is null)
+      )
+    )
+  )
+) TABLESPACE pg_default;
+
+create index IF not exists idx_enrolments_child_id on public.enrolments using btree (child_id) TABLESPACE pg_default;
+
+create index IF not exists idx_enrolments_course_id on public.enrolments using btree (course_id) TABLESPACE pg_default;
+
+create index IF not exists idx_enrolments_profile_id on public.enrolments using btree (profile_id) TABLESPACE pg_default;
+
+
+create table public.profile_children (
+  id uuid not null default gen_random_uuid (),
+  parent_id uuid not null,
+  first_name text not null,
+  last_name text not null,
+  medical_notes text null,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  age integer not null,
+  constraint profile_children_pkey primary key (id),
+  constraint profile_children_parent_id_fkey foreign KEY (parent_id) references profiles (id) on delete CASCADE
+) TABLESPACE pg_default;
+
+create table public.course_slot_times (
+  id uuid not null default gen_random_uuid (),
+  course_slot_id uuid not null,
+  day_of_week integer not null,
+  start_time time without time zone not null,
+  end_time time without time zone not null,
+  created_at timestamp with time zone null default now(),
+  constraint course_slot_times_pkey primary key (id),
+  constraint course_slot_times_course_slot_id_fkey foreign KEY (course_slot_id) references course_slots (id) on update CASCADE on delete CASCADE,
+  constraint course_slot_times_day_check check (
+    (
+      (day_of_week >= 0)
+      and (day_of_week <= 6)
+    )
+  ),
+  constraint course_slot_times_time_check check ((end_time > start_time))
+) TABLESPACE pg_default;
+
+create index IF not exists idx_course_slot_times_slot_id on public.course_slot_times using btree (course_slot_id) TABLESPACE pg_default;
+
+create table public.course_slots (
+  id uuid not null default gen_random_uuid (),
+  created_at timestamp with time zone not null default now(),
+  course_id uuid not null,
+  name_slot text not null,
+  constraint course_slots_pkey primary key (id),
+  constraint course_slots_course_id_fkey foreign KEY (course_id) references courses (id) on update CASCADE on delete CASCADE
+) TABLESPACE pg_default;
+
+create index IF not exists idx_course_slots_course_id on public.course_slots using btree (course_id) TABLESPACE pg_default;
+
+create table public.courses (
+  id uuid not null default gen_random_uuid (),
+  name text not null,
+  description text null,
+  facility_id uuid not null,
+  age_min integer null,
+  age_max integer null,
+  max_participants integer null,
+  price numeric(10, 2) null,
+  start_date date null,
+  end_date date null,
+  is_active boolean null default true,
+  created_at timestamp with time zone not null default now(),
+  updated_at timestamp with time zone not null default now(),
+  image_urls jsonb null default '[""]'::jsonb,
+  instructor_id uuid null,
+  constraint courses_pkey primary key (id),
+  constraint courses_facility_id_fkey foreign KEY (facility_id) references facilities (id) on update CASCADE on delete RESTRICT,
+  constraint courses_instructor_id_fkey foreign KEY (instructor_id) references instructors (id) on update CASCADE on delete RESTRICT,
+  constraint courses_check check ((end_date >= start_date))
+) TABLESPACE pg_default;
