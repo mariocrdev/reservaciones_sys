@@ -102,29 +102,30 @@ const adminNavItems = [
     description: "Gestión de usuarios",
   },
   {
-    title: "Planes",
-    url: "/admin/memberships",
-    icon: "solar:tag-price-bold-duotone",
-    description: "Gestión de planes de membresía",
-  },
-  {
     title: "Pagos",
     url: "/admin/payments",
     icon: "solar:bill-list-bold-duotone",
     description: "Gestión de pagos y comprobantes",
   },
   {
-    title: "Instalaciones",
-    url: "/admin/facilities",
-    icon: "solar:city-bold-duotone",
-    description: "Gestión de instalaciones",
-    badge: "3",
+    title: "Planes",
+    url: "/admin/memberships",
+    icon: "solar:tag-price-bold-duotone",
+    description: "Gestión de planes de membresía",
   },
+
   {
     title: "Reservas",
-    icon: "solar:calendar-date-bold-duotone",
+    icon: "solar:calendar-mark-bold-duotone",
     description: "Gestión de reservas y horarios",
     subItemsReservations: [
+      {
+        title: "Instalaciones",
+        url: "/admin/facilities",
+        icon: "solar:city-bold-duotone",
+        description: "Gestión de instalaciones",
+        badge: "3",
+      },
       {
         title: "Reservas",
         url: "/admin/reservations",
@@ -132,42 +133,51 @@ const adminNavItems = [
         description: "Administración de reservas",
         badge: "5",
       },
-      {
-        title: "Horarios reservas",
-        url: "/admin/schedules",
-        icon: "solar:clock-circle-bold-duotone",
-        description: "Configuración de horarios",
-      },
     ],
   },
   {
     title: "Cursos",
-    icon: "solar:notebook-bold-duotone",
-    description: "Gestión de reservas y horarios",
-    subItemsCourses: [
-      {
-        title: "Cursos",
-        url: "/admin/courses",
-        icon: "solar:book-bookmark-bold-duotone",
-        description: "Administración de cursos",
-      },
-      {
-        title: "Instructores",
-        url: "/admin/instructors",
-        icon: "solar:user-id-bold-duotone",
-        description: "Administrar los instructores para los cursos",
-      },
-      {
-        title: "Inscripciones",
-        url: "/admin/enrolments",
-        icon: "solar:clipboard-check-bold-duotone",
-        description: "Manejo de inscripciones a cursos",
-      },
-    ],
+    url: "/admin/courses",
+    icon: "solar:book-bookmark-bold-duotone",
+    description: "Administración de cursos",
   },
+
+  // {
+  //   title: "Cursos",
+  //   icon: "solar:notebook-bold-duotone",
+  //   description: "Gestión de reservas y horarios",
+  //   subItemsCourses: [
+  //     {
+  //       title: "Cursos",
+  //       url: "/admin/courses",
+  //       icon: "solar:book-bookmark-bold-duotone",
+  //       description: "Administración de cursos",
+  //     },
+  //     {
+  //       title: "Instructores",
+  //       url: "/admin/instructors",
+  //       icon: "solar:user-id-bold-duotone",
+  //       description: "Administrar los instructores para los cursos",
+  //     },
+  //     {
+  //       title: "Inscripciones",
+  //       url: "/admin/enrolments",
+  //       icon: "solar:clipboard-check-bold-duotone",
+  //       description: "Manejo de inscripciones a cursos",
+  //     },
+  //   ],
+  // },
 ];
 
 export function AppSidebar({ children }) {
+  return (
+    <SidebarProvider defaultOpen={true}>
+      <AppSidebarContent>{children}</AppSidebarContent>
+    </SidebarProvider>
+  );
+}
+
+function AppSidebarContent({ children }) {
   const { session, signOut, loading: loadingAuth } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -176,6 +186,7 @@ export function AppSidebar({ children }) {
     session?.user?.id,
   );
   const isAdmin = profile?.role === "admin";
+  const { state } = useSidebar();
   // State to manage expanded/collapsed state of Reservas & Courses section
   const [isReservasExpanded, setIsReservasExpanded] = useState(false);
   const [isCoursesExpanded, setIsCoursesExpanded] = useState(false);
@@ -224,7 +235,7 @@ export function AppSidebar({ children }) {
   }
 
   return (
-    <SidebarProvider defaultOpen={true}>
+    <>
       <Sidebar collapsible="icon" className="border-r">
         <SidebarHeader>
           <SidebarMenu>
@@ -265,53 +276,92 @@ export function AppSidebar({ children }) {
                       {adminNavItems.map((item) => (
                         <SidebarMenuItem key={item.title}>
                           {item.subItemsReservations ? (
-                            <>
-                              <SidebarMenuButton
-                                onClick={() =>
-                                  setIsReservasExpanded(!isReservasExpanded)
-                                }
-                                className="flex items-center justify-between"
-                                tooltip={item.description}
-                              >
-                                <div className="flex items-center">
-                                  <Icon
-                                    icon={item.icon}
-                                    className="mr-2 h-4 w-4"
-                                  />
-                                  <span>{item.title}</span>
-                                </div>
-                                <ChevronRight
-                                  className={`h-4 w-4 transition-transform ${isReservasExpanded ? "rotate-90" : ""
-                                    }`}
-                                />
-                              </SidebarMenuButton>
-                              {isReservasExpanded && (
-                                <div className="ml-6 border-l pl-2">
+                            state === "collapsed" ? (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <SidebarMenuButton
+                                    tooltip={item.description}
+                                    className="flex items-center justify-between"
+                                  >
+                                    <div className="flex items-center">
+                                      <Icon
+                                        icon={item.icon}
+                                        className="mr-2 h-4 w-4"
+                                      />
+                                      <span>{item.title}</span>
+                                    </div>
+                                    <ChevronRight className="h-4 w-4" />
+                                  </SidebarMenuButton>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                  side="right"
+                                  align="start"
+                                  className="min-w-56 rounded-lg bg-sidebar text-sidebar-foreground border-sidebar-border"
+                                >
+                                  <DropdownMenuLabel>{item.title}</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
                                   {item.subItemsReservations.map((subItem) => (
-                                    <SidebarMenuItem
-                                      key={subItem.title}
-                                      className="mt-1"
-                                    >
-                                      <SidebarMenuButton
-                                        asChild
-                                        isActive={
-                                          location.pathname === subItem.url
-                                        }
-                                        tooltip={subItem.description}
+                                    <DropdownMenuItem key={subItem.title} asChild>
+                                      <Link
+                                        to={subItem.url}
+                                        className="flex items-center w-full cursor-pointer gap-2"
                                       >
-                                        <Link to={subItem.url}>
-                                          <Icon
-                                            icon={subItem.icon}
-                                            className="h-4 w-4"
-                                          />
-                                          <span>{subItem.title}</span>
-                                        </Link>
-                                      </SidebarMenuButton>
-                                    </SidebarMenuItem>
+                                        <Icon icon={subItem.icon} className="h-4 w-4" />
+                                        <span>{subItem.title}</span>
+                                      </Link>
+                                    </DropdownMenuItem>
                                   ))}
-                                </div>
-                              )}
-                            </>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            ) : (
+                              <>
+                                <SidebarMenuButton
+                                  onClick={() =>
+                                    setIsReservasExpanded(!isReservasExpanded)
+                                  }
+                                  className="flex items-center justify-between"
+                                  tooltip={item.description}
+                                >
+                                  <div className="flex items-center">
+                                    <Icon
+                                      icon={item.icon}
+                                      className="mr-2 h-4 w-4"
+                                    />
+                                    <span>{item.title}</span>
+                                  </div>
+                                  <ChevronRight
+                                    className={`h-4 w-4 transition-transform ${isReservasExpanded ? "rotate-90" : ""
+                                      }`}
+                                  />
+                                </SidebarMenuButton>
+                                {isReservasExpanded && (
+                                  <div className="ml-6 border-l pl-2">
+                                    {item.subItemsReservations.map((subItem) => (
+                                      <SidebarMenuItem
+                                        key={subItem.title}
+                                        className="mt-1"
+                                      >
+                                        <SidebarMenuButton
+                                          asChild
+                                          isActive={
+                                            location.pathname === subItem.url
+                                          }
+                                          tooltip={subItem.description}
+                                        >
+                                          <Link to={subItem.url}>
+                                            <Icon
+                                              icon={subItem.icon}
+                                              className="h-4 w-4"
+                                            />
+                                            <span>{subItem.title}</span>
+                                          </Link>
+                                        </SidebarMenuButton>
+                                      </SidebarMenuItem>
+                                    ))}
+                                  </div>
+                                )}
+                              </>
+                            )
                           ) : item.subItemsCourses ? (
                             <>
                               <SidebarMenuButton
@@ -381,10 +431,7 @@ export function AppSidebar({ children }) {
 
               <SidebarGroup>
                 <SidebarGroupLabel className="flex items-center text-primary font-medium">
-                  <Icon
-                    icon="solar:user-circle-bold-duotone"
-                    className="mr-2 h-4 w-4"
-                  />
+                  <Icon icon="tdesign:user-filled" className="mr-2 h-4 w-4" />
                   Usuario
                 </SidebarGroupLabel>
                 <SidebarGroupContent>
@@ -409,10 +456,7 @@ export function AppSidebar({ children }) {
 
               <SidebarGroup>
                 <SidebarGroupLabel className="flex items-center text-primary font-medium">
-                  <Icon
-                    icon="solar:question-circle-bold-duotone"
-                    className="mr-2 h-4 w-4"
-                  />
+                  <Icon icon="bx:support" className="mr-2 h-4 w-4" />
                   Soporte
                 </SidebarGroupLabel>
                 <SidebarGroupContent>
@@ -421,7 +465,7 @@ export function AppSidebar({ children }) {
                       <SidebarMenuButton asChild tooltip="Centro de ayuda">
                         <a href="#" target="_blank" rel="noopener noreferrer">
                           <Icon
-                            icon="solar:question-circle-bold-duotone"
+                            icon="material-symbols:contact-support"
                             className="h-4 w-4"
                           />
                           <span>Ayuda</span>
@@ -525,7 +569,7 @@ export function AppSidebar({ children }) {
         </header>
         <main className="flex-1 overflow-auto p-6">{children}</main>
       </div>
-    </SidebarProvider>
+    </>
   );
 }
 

@@ -842,9 +842,6 @@ create table public.course_slots (
   instructor_id uuid references public.profiles(id), -- Instructor asignado
   facility_id uuid references public.facilities(id), -- Lugar donde se dicta
   
-  -- Horario (ej: Lunes y Miércoles 17:00 - 18:00)
-  schedule_description text not null, 
-  
   -- Gestión de Cupos
   max_capacity integer not null default 10,
   current_enrolments integer not null default 0,
@@ -852,11 +849,20 @@ create table public.course_slots (
   -- Precio del curso completo o ciclo
   price numeric(10, 2) not null,
   
-  start_date date not null, -- Inicio del ciclo
-  end_date date not null,   -- Fin del ciclo
+  start_date date, -- Inicio del ciclo
+  end_date date,   -- Fin del ciclo
+  duration interval NULL, -- Duración alternativa para ciclos por periodos (ej: 1 month)
   
   is_active boolean default true,
   created_at timestamp with time zone default now()
+);
+
+-- Constraint para asegurar que sea o Fijo o por Periodos
+ALTER TABLE public.course_slots
+ADD CONSTRAINT check_course_timing_type
+CHECK (
+  (start_date IS NOT NULL AND end_date IS NOT NULL AND duration IS NULL) OR -- Ciclo Fijo
+  (start_date IS NULL AND end_date IS NULL AND duration IS NOT NULL)       -- Por Periodos
 );
 
 --{RLS}
@@ -873,6 +879,84 @@ using (public.has_role(auth.uid(), 'admin'::public.app_role));
 
 --<><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
+create table public.course_schedule (
+  id uuid not null default gen_random_uuid() primary key,
+  course_slot_id uuid not null references public.course_slots(id) on delete cascade,
+  instructor_id uuid references public.profiles(id),
+  facility_id uuid references public.facilities(id),
+  
+  day_of_week integer not null check (day_of_week >= 0 and day_of_week <= 6),
+  start_time time without time zone not null,
+  end_time time without time zone not null,
+  
+  constraint course_schedule_check check (end_time > start_time),
+  
+  -- Evitar solapamientos para el mismo slot (un slot no puede estar en dos lugares a la vez)
+  constraint no_overlapping_course_sessions EXCLUDE using gist (
+    course_slot_id with =,
+    day_of_week with =,
+    tsrange(
+      ('2000-01-01'::date + start_time),
+      ('2000-01-01'::date + end_time)
+    ) with &&
+  )
+);
+
+-- Index para búsquedas rápidas por slot
+create index idx_course_schedule_slot on public.course_schedule(course_slot_id);
+
+-- Trigger para sincronizar instructor_id y facility_id desde course_slots
+CREATE OR REPLACE FUNCTION public.sync_course_schedule_ids()
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  -- Obtenemos el instructor y la instalación del slot padre
+  SELECT instructor_id, facility_id 
+  INTO NEW.instructor_id, NEW.facility_id
+  FROM public.course_slots
+  WHERE id = NEW.course_slot_id;
+
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trigger_sync_ids_on_schedule
+BEFORE INSERT OR UPDATE ON public.course_schedule
+FOR EACH ROW
+EXECUTE FUNCTION public.sync_course_schedule_ids();
+
+
+-- 1. Evitar que un instructor tenga dos clases al mismo tiempo
+ALTER TABLE public.course_schedule
+ADD CONSTRAINT no_instructor_clash EXCLUDE using gist (
+  instructor_id WITH =,
+  day_of_week WITH =,
+  tsrange(('2000-01-01'::date + start_time), ('2000-01-01'::date + end_time)) WITH &&
+);
+
+-- 2. Evitar que una instalación se use para dos cursos distintos al mismo tiempo
+ALTER TABLE public.course_schedule
+ADD CONSTRAINT no_facility_course_clash EXCLUDE using gist (
+  facility_id WITH =,
+  day_of_week WITH =,
+  tsrange(('2000-01-01'::date + start_time), ('2000-01-01'::date + end_time)) WITH &&
+);
+
+--{RLS}
+
+-- Aseguramos que RLS permita al admin gestionar los horarios
+alter table public.course_schedule enable row level security;
+
+create policy "Schedule is public" on public.course_schedule for select using (true);
+
+create policy "Admin manage schedule"
+on public.course_schedule
+for all
+using (public.has_role(auth.uid(), 'admin'::public.app_role));
+
+--<><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+
 create table public.enrolments (
   id uuid not null default gen_random_uuid() primary key,
   course_slot_id uuid not null references public.course_slots(id),
@@ -882,6 +966,9 @@ create table public.enrolments (
   child_id uuid references public.family_members(id), -- Si es un hijo
 
   enrolled_by uuid references public.profiles(id), -- Quién hizo la inscripción (puede ser el mismo profile_id o un admin)
+
+  start_date date NULL, -- Para cursos por periodos, la fecha de inicio real de esta inscripción
+  end_date date NULL,   -- Para cursos por periodos, la fecha de fin real de esta inscripción
   
   status text not null default 'pending' check (status in ('pending', 'confirmed', 'cancelled', 'completed')),
   
@@ -1087,27 +1174,42 @@ FOR EACH ROW
 EXECUTE FUNCTION public.handle_subscription_payment_activation();
 
 -- Función para confirmar inscripción al pagar el curso
-create or replace function public.handle_enrolment_payment_confirmation()
-returns trigger
-language plpgsql
-security definer
-as $$
-begin
-  if new.enrolment_id is not null and new.status = 'paid' and (old.status is distinct from 'paid') then
+CREATE OR REPLACE FUNCTION public.handle_enrolment_payment_confirmation()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER -- Crucial para evitar bloqueos por RLS 
+AS $$
+DECLARE
+  slot_record RECORD;
+BEGIN
+  -- Solo actuamos si se confirma el pago de una inscripción
+  IF NEW.enrolment_id IS NOT NULL AND NEW.status = 'paid' AND (OLD.status IS DISTINCT FROM 'paid') THEN
     
-    -- 1. Confirmar la inscripción
-    update public.enrolments
-    set status = 'confirmed', updated_at = now()
-    where id = new.enrolment_id;
+    -- 1. Obtener la configuración del slot
+    SELECT start_date, end_date, duration, id 
+    INTO slot_record
+    FROM public.course_slots
+    WHERE id = (SELECT course_slot_id FROM public.enrolments WHERE id = NEW.enrolment_id);
 
-    -- 2. Aumentar el contador de inscritos en el slot
-    update public.course_slots
-    set current_enrolments = current_enrolments + 1
-    where id = (select course_slot_id from public.enrolments where id = new.enrolment_id);
+    -- 2. Confirmar la inscripción y calcular fechas
+    UPDATE public.enrolments
+    SET 
+      status = 'confirmed',
+      -- Si el slot tiene fechas fijas, las usamos.
+      -- Si no, el inicio es HOY y el fin es HOY + DURACIÓN.
+      start_date = COALESCE(slot_record.start_date, CURRENT_DATE),
+      end_date = COALESCE(slot_record.end_date, (CURRENT_DATE + slot_record.duration)::date),
+      updated_at = now()
+    WHERE id = NEW.enrolment_id;
 
-  end if;
-  return new;
-end;
+    -- 3. Aumentar el contador de inscritos
+    UPDATE public.course_slots
+    SET current_enrolments = current_enrolments + 1
+    WHERE id = slot_record.id;
+
+  END IF;
+  RETURN NEW;
+END;
 $$;
 
 create trigger trigger_confirm_enrolment_on_payment
@@ -1267,4 +1369,18 @@ create table public.courses (
   constraint courses_facility_id_fkey foreign KEY (facility_id) references facilities (id) on update CASCADE on delete RESTRICT,
   constraint courses_instructor_id_fkey foreign KEY (instructor_id) references instructors (id) on update CASCADE on delete RESTRICT,
   constraint courses_check check ((end_date >= start_date))
+) TABLESPACE pg_default;
+
+create table public.instructors (
+  id uuid not null default gen_random_uuid (),
+  created_at timestamp with time zone not null default now(),
+  name text not null,
+  last_name text not null,
+  profession text not null,
+  email text not null,
+  phone text null,
+  experience integer null,
+  biography text null,
+  image_url text not null,
+  constraint instructors_pkey primary key (id)
 ) TABLESPACE pg_default;

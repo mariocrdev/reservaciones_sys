@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAdminUsers, useUpdateUserRole } from "@/hooks/admin/useAdminUsers";
 import {
   Table,
@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -23,9 +24,32 @@ import { toast } from "sonner";
 
 export default function UsersManagement() {
   const [page, setPage] = useState(1);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
   const limit = 20;
 
-  const { data, isLoading, isError } = useAdminUsers(page, limit);
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1); // Reset page on search change
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  // Reset page on role filter change
+  useEffect(() => {
+    setPage(1);
+  }, [roleFilter]);
+
+  const { data, isLoading, isError } = useAdminUsers(
+    page,
+    limit,
+    debouncedSearch,
+    roleFilter === "all" ? "" : roleFilter,
+  );
   // data matches { users: [], count: number } from UserService because hook returns query Fn result directly
   // Actually hook returns { data, isLoading, ... } from useQuery, so `data` above IS the result object: { users, count }
 
@@ -62,6 +86,30 @@ export default function UsersManagement() {
         <div className="text-sm text-muted-foreground">
           Total: {count} usuarios
         </div>
+      </div>
+
+      <div className="flex gap-4">
+        <Input
+          placeholder="Buscar por nombre, email o teléfono..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="max-w-sm"
+        />
+        <Select
+          value={roleFilter}
+          onValueChange={(value) => setRoleFilter(value)}
+        >
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Filtrar por rol" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos los roles</SelectItem>
+            <SelectItem value="member">Miembro</SelectItem>
+            <SelectItem value="staff">Staff</SelectItem>
+            <SelectItem value="instructor">Instructor</SelectItem>
+            <SelectItem value="admin">Admin</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="rounded-md border">

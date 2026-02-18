@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { NewReservationDialog } from "@/components/reservations/NewReservationDialog";
+import { NewReservationDialog } from "@/components/user/reservations/NewReservationDialog";
 import Loading from "@/components/global/Loading";
 import {
   Carousel,
@@ -52,7 +52,7 @@ import {
 import { Loader2, CreditCard, Timer } from "lucide-react";
 import { useCreatePayment } from "@/hooks/usePayments";
 
-import { PaymentUploadDialog } from "@/components/reservations/PaymentUploadDialog";
+import { PaymentUploadDialog } from "@/components/user/reservations/PaymentUploadDialog";
 
 const ReservationCard = ({ res }) => {
   const { user } = useAuth();

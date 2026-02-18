@@ -22,7 +22,8 @@ import MyProfile from "@/pages/user/MyProfile";
 import FamilyMembers from "@/pages/user/FamilyMembers";
 // import AdminSchedules from "@/pages/admin/reservationsAdmin/AdminSchedules"
 // import AdminReservations from "@/pages/admin/reservationsAdmin/AdminReservations"
-// import AdminCourses from "@/pages/admin/coursesAdmin/AdminCourses"
+import AdminCourses from "@/pages/admin/coursesAdmin/AdminCourses"
+import AdminCourseSlots from "@/pages/admin/coursesAdmin/AdminCourseSlots"
 // import AdminInstructors from "@/pages/admin/coursesAdmin/AdminInstructors"
 // import CourseSlots from "@/pages/admin/coursesAdmin/AdminCourseSlots"
 // import NotFound from "@/pages/public/NotFound";
@@ -61,6 +62,8 @@ const AppRoutes = () => {
           <Route path="/admin/memberships" element={<MembershipsManager />} />
           <Route path="/admin/reservations" element={<ReservationsManagement />} />
           <Route path="/admin/payments" element={<PaymentsManagement />} />
+          <Route path="/admin/courses" element={<AdminCourses />} />
+          <Route path="/admin/courses/:id/slots" element={<AdminCourseSlots />} />
           <Route path="/memberships" element={<MembershipsPage />} />
           <Route path="/my-reservations" element={<MyReservations />} />
           <Route path="/profile" element={<MyProfile />} />

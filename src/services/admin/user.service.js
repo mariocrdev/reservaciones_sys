@@ -1,11 +1,11 @@
 import { supabase } from "@/lib/supabase";
 
 export const UserService = {
-  async getAllUsers({ page = 1, limit = 20 }) {
+  async getAllUsers({ page = 1, limit = 20, search = "", role = "" }) {
     const from = (page - 1) * limit;
     const to = from + limit - 1;
 
-    const { data, error, count } = await supabase
+    let query = supabase
       .from("profiles")
       .select(
         `
@@ -15,12 +15,24 @@ export const UserService = {
         email,
         phone,
         profile_image_url,
-        user_roles (
+        user_roles!inner (
           role
         )
       `,
         { count: "exact" },
-      )
+      );
+
+    if (search) {
+      query = query.or(
+        `first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`,
+      );
+    }
+
+    if (role && role !== "all") {
+      query = query.eq("user_roles.role", role);
+    }
+
+    const { data, error, count } = await query
       .range(from, to)
       .order("created_at", { ascending: false });
 
@@ -33,6 +45,23 @@ export const UserService = {
     });
 
     return { users, count };
+  },
+
+  async getInstructors() {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select(`
+        id,
+        first_name,
+        last_name,
+        email,
+        user_roles!inner(role)
+      `)
+      .eq("user_roles.role", "instructor")
+      .order("first_name", { ascending: true });
+
+    if (error) throw error;
+    return data;
   },
 
   async updateUserRole(userId, role) {
