@@ -79,6 +79,7 @@ create table public.profiles (
   phone text null,
   address text null,
   city text null,
+  date_birth date,
   profile_image_url text null,
   stripe_customer_id text null, -- Previsión para futuro
   created_at timestamp with time zone default now(),
@@ -110,7 +111,29 @@ begin
 end;
 $$;
 
+-- 2. Crear función para verificar si un perfil es instructor
+CREATE OR REPLACE FUNCTION public.is_instructor_profile(_profile_id uuid)
+RETURNS boolean
+LANGUAGE sql STABLE SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.user_roles
+    WHERE user_id = _profile_id
+      AND role = 'instructor'::public.app_role
+  );
+$$;
+
 --{RLS}
+
+-- Política: Instructores son visibles públicamente (pero RLS no filtra columnas)
+-- Esta política permite que cualquiera vea la fila completa del instructor
+-- Por eso recomendamos usar la VISTA en su lugar para control de columnas
+CREATE POLICY "Instructors are public" 
+ON public.profiles 
+FOR SELECT 
+USING (public.is_instructor_profile(id));
 
 CREATE POLICY "Admins can view all profiles" ON public.profiles FOR SELECT USING (public.has_role(auth.uid(), 'admin'::public.app_role));
 
@@ -205,24 +228,6 @@ execute function public.handle_new_profile_role();
 CREATE POLICY "Only admins can manage roles" ON public.user_roles USING (public.has_role(auth.uid(), 'admin'::public.app_role)) WITH CHECK (public.has_role(auth.uid(), 'admin'::public.app_role));
 
 CREATE POLICY "Users can view their own roles" ON public.user_roles FOR SELECT USING ((auth.uid() = user_id));
-
-alter table public.profiles
-alter column phone type varchar(20);
-
-alter table public.profiles
-alter column email type varchar(150);
-
-alter table public.profiles
-alter column city type varchar(100);
-
-alter table public.profiles
-alter column first_name type varchar(100);
-
-alter table public.profiles
-alter column last_name type varchar(100);
-
-alter table public.profiles
-alter column address type varchar(150);
 
 --------------------------------------------------------------------------INSTALACIONES - RESERVACIONES
 
@@ -348,11 +353,11 @@ create policy "Admins manage blockages" on public.facility_blockages
 
 -- TABLE reservations
 
--- Usamos tsrange (Time Stamp Range) para manejar rangos de tiempo
+-- Usamos tsrange (Time Stamp Range) para manejar rangos de tiempo de forma nativa, lo que facilita validaciones de solapamiento.
 create table public.reservations (
   id uuid not null default gen_random_uuid() primary key,
   user_id uuid not null references public.profiles(id),
-  facility_id uuid not null references public.facilities(id),
+  facility_id uuid not null references public.facilities(id) on update CASCADE on delete RESTRICT ,
   
   -- Rango de tiempo de la reserva (ej: [2026-01-30 10:00, 2026-01-30 11:00))
   booked_period tsrange not null, 
@@ -808,7 +813,7 @@ using (
 --   public.has_role(auth.uid(), 'admin'::public.app_role)
 -- );
 
---------------------------------------------------------------------------COURSES - ENROLLMENTS
+--------------------------------------------------------------------------COURSES - ENROLMENTS
 
 -- 1. Los Cursos (La definición general)
 create table public.courses (
@@ -957,6 +962,8 @@ using (public.has_role(auth.uid(), 'admin'::public.app_role));
 
 --<><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
+-- TABLE enrolments
+
 create table public.enrolments (
   id uuid not null default gen_random_uuid() primary key,
   course_slot_id uuid not null references public.course_slots(id),
@@ -983,6 +990,21 @@ create table public.enrolments (
   )
 );
 
+-- 1. Índice único parcial para evitar inscripciones duplicadas activas
+-- Un usuario/familiar no puede tener dos inscripciones 'pending' o 'confirmed' en el mismo slot
+
+-- Para inscripciones de adultos (profile_id)
+CREATE UNIQUE INDEX idx_unique_active_enrolment_adult 
+ON public.enrolments (course_slot_id, profile_id)
+WHERE profile_id IS NOT NULL 
+  AND status IN ('pending', 'confirmed');
+
+-- Para inscripciones de familiares/hijos (child_id)
+CREATE UNIQUE INDEX idx_unique_active_enrolment_child 
+ON public.enrolments (course_slot_id, child_id)
+WHERE child_id IS NOT NULL 
+  AND status IN ('pending', 'confirmed');
+
 --{RLS}
 
 alter table public.enrolments enable row level security;
@@ -1000,6 +1022,80 @@ with check (
   and (select current_enrolments < max_capacity from public.course_slots where id = course_slot_id)
 );
 
+-- 1. Trigger para proteger campos en UPDATE (solo permite modificar status y updated_at)
+CREATE OR REPLACE FUNCTION public.restrict_enrolment_update()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  -- Si es admin, permitir todo
+  IF public.has_role(auth.uid(), 'admin'::public.app_role) THEN
+    RETURN NEW;
+  END IF;
+
+  -- Verificar que sea el dueño de la inscripción
+  IF auth.uid() != OLD.enrolled_by THEN
+    RAISE EXCEPTION 'No tienes permiso para modificar esta inscripción';
+  END IF;
+
+  -- Proteger todos los campos excepto status y updated_at
+  -- Si intentan cambiar algo más, revertir al valor original (OLD)
+  IF NEW.id IS DISTINCT FROM OLD.id THEN NEW.id := OLD.id; END IF;
+  IF NEW.course_slot_id IS DISTINCT FROM OLD.course_slot_id THEN NEW.course_slot_id := OLD.course_slot_id; END IF;
+  IF NEW.profile_id IS DISTINCT FROM OLD.profile_id THEN NEW.profile_id := OLD.profile_id; END IF;
+  IF NEW.child_id IS DISTINCT FROM OLD.child_id THEN NEW.child_id := OLD.child_id; END IF;
+  IF NEW.enrolled_by IS DISTINCT FROM OLD.enrolled_by THEN NEW.enrolled_by := OLD.enrolled_by; END IF;
+  IF NEW.start_date IS DISTINCT FROM OLD.start_date THEN NEW.start_date := OLD.start_date; END IF;
+  IF NEW.end_date IS DISTINCT FROM OLD.end_date THEN NEW.end_date := OLD.end_date; END IF;
+  IF NEW.notes IS DISTINCT FROM OLD.notes THEN NEW.notes := OLD.notes; END IF;
+  IF NEW.created_at IS DISTINCT FROM OLD.created_at THEN NEW.created_at := OLD.created_at; END IF;
+  
+  -- Validar que status solo pueda cambiar a 'cancelled' (si ya estaba en otro estado)
+  -- Permitir cambios si el estado anterior era 'pending' y el nuevo es 'cancelled'
+  -- O si está manteniendo el mismo estado (tocaron updated_at nada más)
+  IF OLD.status != NEW.status THEN
+    -- Solo permitir cambiar a 'cancelled'
+    IF NEW.status != 'cancelled' THEN
+      RAISE EXCEPTION 'Solo puedes cancelar la inscripción. Estado permitido: cancelled';
+    END IF;
+    
+    -- No permitir cancelar si ya está completada
+    IF OLD.status = 'completed' THEN
+      RAISE EXCEPTION 'No puedes cancelar una inscripción completada';
+    END IF;
+  END IF;
+
+  -- Actualizar updated_at automáticamente si no lo hicieron
+  NEW.updated_at := now();
+
+  RETURN NEW;
+END;
+$$;
+
+-- Crear el trigger
+CREATE TRIGGER trigger_restrict_enrolment_update
+BEFORE UPDATE ON public.enrolments
+FOR EACH ROW
+EXECUTE FUNCTION public.restrict_enrolment_update();
+
+-- 2. Política UPDATE para el dueño (el trigger hace la validación real)
+CREATE POLICY "Users can update own enrolments"
+ON public.enrolments
+FOR UPDATE
+TO authenticated
+USING (auth.uid() = enrolled_by)
+WITH CHECK (auth.uid() = enrolled_by);
+
+-- 3. Política ALL para admin (control total)
+CREATE POLICY "Admin can update,insert,delete any enrolment"
+ON public.enrolments
+FOR ALL
+TO authenticated
+USING (public.has_role(auth.uid(), 'admin'::public.app_role))
+WITH CHECK (public.has_role(auth.uid(), 'admin'::public.app_role));
+
 --------------------------------------------------------------------------PAYMENTS
 
 -- TABLE payments
@@ -1014,6 +1110,15 @@ create table public.payments (
   status public.payment_status not null default 'pending',
   payment_method text null, -- 'stripe', 'cash', 'transfer'
   proof_url text null, -- Para tus comprobantes manuales
+  COLUMN payment_type text 
+  GENERATED ALWAYS AS (
+    CASE
+      WHEN reservation_id IS NOT NULL THEN 'reservation'
+      WHEN subscription_id IS NOT NULL AND plan_id IS NOT NULL THEN 'subscription'
+      WHEN enrolment_id IS NOT NULL THEN 'enrolment'
+      ELSE 'unknown'
+    END
+  ) STORED,
   
   -- Referencias Polimórficas (Saber qué se pagó)
   subscription_id uuid references subscriptions(id),
@@ -1216,6 +1321,47 @@ create trigger trigger_confirm_enrolment_on_payment
 after update of status on public.payments
 for each row
 execute function public.handle_enrolment_payment_confirmation();
+
+-- 1. Agregar el campo payment_type como GENERATED ALWAYS
+-- Esto lo calcula automáticamente según qué campos de referencia estén llenos
+ALTER TABLE public.payments 
+ADD COLUMN payment_type text 
+GENERATED ALWAYS AS (
+  CASE
+    WHEN reservation_id IS NOT NULL THEN 'reservation'
+    WHEN subscription_id IS NOT NULL AND plan_id IS NOT NULL THEN 'subscription'
+    WHEN enrolment_id IS NOT NULL THEN 'enrolment'
+    ELSE 'unknown'
+  END
+) STORED;
+
+-- Agregar constraint para validar que payment_type tenga valores específicos
+ALTER TABLE public.payments 
+ADD CONSTRAINT check_payment_type 
+CHECK (payment_type IN ('reservation', 'subscription', 'enrolment', 'unknown'));
+
+-- 2. Constraint de EXCLUSIVIDAD: Solo un tipo de pago por fila
+-- Garantiza que solo uno de los campos de referencia esté lleno (o ninguno, pero no múltiples)
+
+ALTER TABLE public.payments 
+ADD CONSTRAINT check_single_payment_target 
+CHECK (
+  -- Cuenta cuántos campos de referencia están llenos, debe ser 0 o 1
+  (
+    CASE WHEN reservation_id IS NOT NULL THEN 1 ELSE 0 END +
+    CASE WHEN subscription_id IS NOT NULL THEN 1 ELSE 0 END +
+    CASE WHEN enrolment_id IS NOT NULL THEN 1 ELSE 0 END
+  ) <= 1
+);
+
+-- 3. Constraint adicional: Si es subscription, plan_id es obligatorio
+-- (Aunque tu lógica de negocio ya lo requiere, lo forzamos a nivel DB)
+ALTER TABLE public.payments 
+ADD CONSTRAINT check_subscription_requires_plan 
+CHECK (
+  (subscription_id IS NULL) OR 
+  (subscription_id IS NOT NULL AND plan_id IS NOT NULL)
+);
 
 --{RLS}
 

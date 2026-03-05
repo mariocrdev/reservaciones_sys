@@ -22,9 +22,11 @@ export function ProductDialog({ open, onOpenChange, productToEdit }) {
     const createProductMutation = useCreateProduct();
     const updateProductMutation = useUpdateProduct();
     const uploadImageMutation = useUploadImage();
-
     const [isUploading, setIsUploading] = useState(false);
-    const [imageUrl, setImageUrl] = useState(null);
+
+    // UI state for image handling
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState(null);
 
     const {
         register,
@@ -60,7 +62,8 @@ export function ProductDialog({ open, onOpenChange, productToEdit }) {
                 features: features,
                 active: productToEdit.active,
             });
-            setImageUrl(productToEdit.image_url);
+            setPreviewUrl(productToEdit.image_url);
+            setSelectedFile(null);
         } else {
             reset({
                 name: "",
@@ -68,54 +71,78 @@ export function ProductDialog({ open, onOpenChange, productToEdit }) {
                 features: [],
                 active: true,
             });
-            setImageUrl(null);
+            setPreviewUrl(null);
+            setSelectedFile(null);
         }
     }, [productToEdit, open, reset]);
 
-    const handleImageUpload = async (e) => {
+    // Handle file selection (local preview only)
+    const handleImageSelect = (e) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        setIsUploading(true);
-        try {
-            // If there's an existing image (that is different from the one we might be about to save?), 
-            // we might want to delete it, but usually we wait until save. 
-            // However, for simplicity/UX, we upload immediately here.
-            // If we are editing and replace an image, ideally we clean up the old one, but that can be complex if user cancels.
-            // For now, just upload new one.
-            const url = await uploadImageMutation.mutateAsync(file);
-            setImageUrl(url);
-            toast.success("Imagen subida correctamente");
-        } catch (error) {
-            console.error(error);
-            toast.error("Error al subir la imagen");
-        } finally {
-            setIsUploading(false);
+        setSelectedFile(file);
+        const objectUrl = URL.createObjectURL(file);
+        setPreviewUrl(objectUrl);
+    };
+
+    const handleRemoveImage = async () => {
+        // If we have a selected file (unsaved), just clear it
+        if (selectedFile) {
+            setSelectedFile(null);
+            setPreviewUrl(productToEdit?.image_url || null); // Revert to existing if any
+            return;
+        }
+
+        // If we are editing an existing product with an image, delete it immediately
+        if (isEditing && productToEdit.image_url) {
+            if (confirm("¿Estás seguro de eliminar la imagen actual? Esta acción no se puede deshacer.")) {
+                try {
+                    await MembershipService.removeProductImage(productToEdit.id, productToEdit.image_url);
+                    setPreviewUrl(null);
+                    toast.success("Imagen eliminada correctamente");
+                    // Optionally refresh parent list or update local state
+                    // Ideally we should invalidate queries here or update local state to reflect deletion
+                    // For now, we rely on the parent component refetching or user closing dialog
+                } catch (error) {
+                    console.error("Error removing image:", error);
+                    toast.error("Error al eliminar la imagen");
+                }
+            }
         }
     };
 
-    const handleRemoveImage = () => {
-        setImageUrl(null);
-    };
-
     const onSubmit = async (data) => {
-        const featuresArray = data.features.map((f) => f.value).filter(Boolean);
-
-        const formattedData = {
-            name: data.name,
-            description: data.description,
-            features: featuresArray,
-            active: data.active,
-            image_url: imageUrl,
-        };
-
+        setIsUploading(true);
         try {
+            let finalImageUrl = previewUrl;
+
+            // If a new file is selected, upload it now
+            if (selectedFile) {
+                finalImageUrl = await uploadImageMutation.mutateAsync(selectedFile);
+            } else if (isEditing && !previewUrl) {
+                // If editing and no preview (meaning it was deleted/cleared), ensure it's null
+                finalImageUrl = null;
+            } else if (isEditing && previewUrl === productToEdit.image_url) {
+                // If editing and preview hasn't changed, keep existing
+                finalImageUrl = productToEdit.image_url;
+            }
+
+            const featuresArray = data.features.map((f) => f.value).filter(Boolean);
+
+            const formattedData = {
+                name: data.name,
+                description: data.description,
+                features: featuresArray,
+                active: data.active,
+                image_url: finalImageUrl,
+            };
+
             if (isEditing) {
                 await updateProductMutation.mutateAsync({
                     id: productToEdit.id,
                     data: formattedData,
                 });
-                // cleanup old image if changed? (Adding complexity, skipping for now)
                 onOpenChange(false);
             } else {
                 await createProductMutation.mutateAsync(formattedData);
@@ -123,6 +150,9 @@ export function ProductDialog({ open, onOpenChange, productToEdit }) {
             }
         } catch (error) {
             console.error(error);
+            toast.error("Error al guardar el producto");
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -176,10 +206,10 @@ export function ProductDialog({ open, onOpenChange, productToEdit }) {
                         <div className="space-y-4">
                             <Label>Imagen del Producto</Label>
                             <div className="flex flex-col items-center justify-center p-4 border-2 border-dashed rounded-lg bg-muted/30">
-                                {imageUrl ? (
+                                {previewUrl ? (
                                     <div className="relative w-full aspect-video rounded-md overflow-hidden group">
                                         <img
-                                            src={imageUrl}
+                                            src={previewUrl}
                                             alt="Preview"
                                             className="w-full h-full object-cover"
                                         />
@@ -211,7 +241,7 @@ export function ProductDialog({ open, onOpenChange, productToEdit }) {
                                             type="file"
                                             accept="image/*"
                                             className="hidden"
-                                            onChange={handleImageUpload}
+                                            onChange={handleImageSelect}
                                             disabled={isUploading}
                                         />
                                     </div>

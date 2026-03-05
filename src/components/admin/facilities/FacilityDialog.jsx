@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
 export function FacilityDialog({ open, onOpenChange, facility, types }) {
@@ -171,6 +172,16 @@ export function FacilityDialog({ open, onOpenChange, facility, types }) {
                 setFormData({ ...formData, description: e.target.value })
               }
             />
+          </div>
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="is_active"
+              checked={formData.is_active}
+              onCheckedChange={(checked) =>
+                setFormData({ ...formData, is_active: checked })
+              }
+            />
+            <Label htmlFor="is_active">Activo</Label>
           </div>
 
           <DialogFooter>

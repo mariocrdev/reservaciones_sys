@@ -20,6 +20,8 @@ import AppLayout from "@/components/sidebar/AppLayout";
 import MyReservations from "@/pages/user/MyReservations";
 import MyProfile from "@/pages/user/MyProfile";
 import FamilyMembers from "@/pages/user/FamilyMembers";
+import CoursesCatalog from "@/pages/user/CoursesCatalog";
+import MyEnrolments from "@/pages/user/MyEnrolments";
 // import AdminSchedules from "@/pages/admin/reservationsAdmin/AdminSchedules"
 // import AdminReservations from "@/pages/admin/reservationsAdmin/AdminReservations"
 import AdminCourses from "@/pages/admin/coursesAdmin/AdminCourses"
@@ -36,11 +38,14 @@ import AdminFacilities from "@/pages/admin/AdminFacilities";
 import MembershipsManager from "@/components/admin/memberships/MembershipsManager";
 import ReservationsManagement from "@/pages/admin/ReservationsManagement";
 import PaymentsManagement from "@/pages/admin/PaymentsManagement";
+import SubscriptionsManagement from "@/pages/admin/SubscriptionsManagement";
+import AdminEnrolments from "@/pages/admin/AdminEnrolments";
+import AdminDashboard from "@/pages/admin/AdminDashboard";
 
 import MembershipsPage from "@/pages/user/MembershipsPage";
 
 const AppRoutes = () => {
-  const { session, loading } = useAuth();
+  const { session } = useAuth();
 
   return (
     <Routes>
@@ -57,17 +62,23 @@ const AppRoutes = () => {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/dashboard" element={<>gfdgfd</>} />
+          <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/users" element={<UsersManagement />} />
           <Route path="/admin/facilities" element={<AdminFacilities />} />
           <Route path="/admin/memberships" element={<MembershipsManager />} />
           <Route path="/admin/reservations" element={<ReservationsManagement />} />
           <Route path="/admin/payments" element={<PaymentsManagement />} />
+          <Route path="/admin/subscriptions" element={<SubscriptionsManagement />} />
           <Route path="/admin/courses" element={<AdminCourses />} />
           <Route path="/admin/courses/:id/slots" element={<AdminCourseSlots />} />
+          <Route path="/admin/enrolments" element={<AdminEnrolments />} />
           <Route path="/memberships" element={<MembershipsPage />} />
           <Route path="/my-reservations" element={<MyReservations />} />
           <Route path="/profile" element={<MyProfile />} />
           <Route path="/profile/family" element={<FamilyMembers />} />
+          <Route path="/dashboard/courses" element={<CoursesCatalog />} />
+          <Route path="/dashboard/enrolments" element={<MyEnrolments />} />
           {/* <Route path="/facilities" element={<Facilities />} />
         <Route path="/facilities/:type/:id" element={<FacilityDetail/>} />
         <Route path="/courses" element={<Courses/>} />

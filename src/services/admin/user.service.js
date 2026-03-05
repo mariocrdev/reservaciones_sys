@@ -17,7 +17,8 @@ export const UserService = {
         profile_image_url,
         user_roles!inner (
           role
-        )
+        ),
+        family_members (count)
       `,
         { count: "exact" },
       );
@@ -41,10 +42,22 @@ export const UserService = {
     const users = data.map((user) => {
       const roles = user.user_roles?.map((r) => r.role) || [];
       const role = roles.includes("admin") ? "admin" : roles[0] || "member";
-      return { ...user, role };
+      const familyCount = user.family_members?.[0]?.count || 0;
+      return { ...user, role, familyCount };
     });
 
     return { users, count };
+  },
+
+  async getFamilyMembersByUserId(userId) {
+    const { data, error } = await supabase
+      .from("family_members")
+      .select("*")
+      .eq("parent_id", userId)
+      .order("first_name", { ascending: true });
+
+    if (error) throw error;
+    return data;
   },
 
   async getInstructors() {

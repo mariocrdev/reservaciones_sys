@@ -50,12 +50,12 @@ const userNavItems = [
     icon: "lucide:layout-dashboard",
     description: "Vista general de tu cuenta",
   },
-  // {
-  //   title: "Cursos",
-  //   url: "/courses",
-  //   icon: "solar:book-bookmark-bold-duotone",
-  //   description: "Inscripciones a cursos",
-  // },
+  {
+    title: "Cursos",
+    url: "/dashboard/courses",
+    icon: "solar:book-bookmark-bold-duotone",
+    description: "Inscripciones a cursos",
+  },
   {
     title: "Membresías",
     url: "/memberships",
@@ -70,7 +70,7 @@ const userNavItems = [
   },
   {
     title: "Inscripciones",
-    url: "/enrolments",
+    url: "/dashboard/enrolments",
     icon: "lucide:clipboard-list",
     description: "Gestiona tus inscripciones a los cursos",
   },
@@ -91,7 +91,7 @@ const userNavItems = [
 const adminNavItems = [
   {
     title: "Panel Admin",
-    url: "/admin",
+    url: "/admin/dashboard",
     icon: "solar:widget-bold-duotone",
     description: "Vista general administrativa",
   },
@@ -106,12 +106,6 @@ const adminNavItems = [
     url: "/admin/payments",
     icon: "solar:bill-list-bold-duotone",
     description: "Gestión de pagos y comprobantes",
-  },
-  {
-    title: "Planes",
-    url: "/admin/memberships",
-    icon: "solar:tag-price-bold-duotone",
-    description: "Gestión de planes de membresía",
   },
 
   {
@@ -135,38 +129,45 @@ const adminNavItems = [
       },
     ],
   },
+
+  {
+    title: "Membresías",
+    icon: "solar:users-group-rounded-bold-duotone",
+    description: "Gestión de suscripciones y planes de membresía",
+    subItemsReservations: [
+      {
+        title: "Planes",
+        url: "/admin/memberships",
+        icon: "solar:tag-price-bold-duotone",
+        description: "Gestión de planes de membresía",
+      },
+      {
+        title: "Suscripciones",
+        url: "/admin/subscriptions",
+        icon: "solar:users-group-rounded-bold-duotone",
+        description: "Gestión de suscripciones de usuarios",
+      },
+    ],
+  },
   {
     title: "Cursos",
-    url: "/admin/courses",
-    icon: "solar:book-bookmark-bold-duotone",
-    description: "Administración de cursos",
+    icon: "solar:notebook-bold-duotone",
+    description: "Gestión de cursos e inscripciones",
+    subItemsCourses: [
+      {
+        title: "Cursos",
+        url: "/admin/courses",
+        icon: "solar:book-bookmark-bold-duotone",
+        description: "Administración de cursos",
+      },
+      {
+        title: "Inscripciones",
+        url: "/admin/enrolments",
+        icon: "solar:clipboard-check-bold-duotone",
+        description: "Manejo de inscripciones a cursos",
+      },
+    ],
   },
-
-  // {
-  //   title: "Cursos",
-  //   icon: "solar:notebook-bold-duotone",
-  //   description: "Gestión de reservas y horarios",
-  //   subItemsCourses: [
-  //     {
-  //       title: "Cursos",
-  //       url: "/admin/courses",
-  //       icon: "solar:book-bookmark-bold-duotone",
-  //       description: "Administración de cursos",
-  //     },
-  //     {
-  //       title: "Instructores",
-  //       url: "/admin/instructors",
-  //       icon: "solar:user-id-bold-duotone",
-  //       description: "Administrar los instructores para los cursos",
-  //     },
-  //     {
-  //       title: "Inscripciones",
-  //       url: "/admin/enrolments",
-  //       icon: "solar:clipboard-check-bold-duotone",
-  //       description: "Manejo de inscripciones a cursos",
-  //     },
-  //   ],
-  // },
 ];
 
 export function AppSidebar({ children }) {
@@ -191,6 +192,17 @@ function AppSidebarContent({ children }) {
   const [isReservasExpanded, setIsReservasExpanded] = useState(false);
   const [isCoursesExpanded, setIsCoursesExpanded] = useState(false);
 
+  // Estado dinámico para manejar la expansión de submenús
+  // La clave es el título del item, el valor es booleano (expandido o no)
+  const [expandedItems, setExpandedItems] = useState({});
+
+  const toggleItem = (title) => {
+    setExpandedItems((prev) => ({
+      ...prev,
+      [title]: !prev[title],
+    }));
+  };
+
   // Theme logic removed - handled by ThemeContext
 
   const toggleTheme = () => {
@@ -211,14 +223,15 @@ function AppSidebarContent({ children }) {
     if (location.pathname === "/dashboard") return "Mi Panel";
     if (location.pathname === "/facilities") return "Instalaciones";
     if (location.pathname === "/profile") return "Mi Perfil";
+    if (location.pathname === "/admin/dashboard") return "Panel Global";
     if (location.pathname === "/admin") return "Administración";
     if (location.pathname === "/admin/memberships")
       return "Planes de Membresía";
     if (location.pathname === "/admin/payments") return "Gestión de Pagos";
     if (location.pathname === "/my-reservations") return "Mis Reservaciones";
     if (location.pathname === "/memberships") return "Membresías";
-    if (location.pathname === "/courses") return "Cursos";
-    if (location.pathname === "/enrolments") return "Inscripciones";
+    if (location.pathname === "/dashboard/courses") return "Cursos";
+    if (location.pathname === "/dashboard/enrolments") return "Mis Inscripciones";
     if (location.pathname === "/profile/childrens") return "Niños";
     if (location.pathname.includes("/facilities/"))
       return "Detalle de Instalación";
@@ -228,6 +241,101 @@ function AppSidebarContent({ children }) {
   const getUserInitials = () => {
     if (!session?.user?.email) return "U";
     return session.user.email.charAt(0).toUpperCase();
+  };
+
+  const renderMenuItem = (item) => {
+    // Determinar si el item tiene subitems (cualquier propiedad que empiece con 'subItems')
+    const subItemsKey = Object.keys(item).find(key => key.startsWith('subItems'));
+    const subItems = subItemsKey ? item[subItemsKey] : null;
+    const isExpanded = expandedItems[item.title] || false;
+
+    return (
+      <SidebarMenuItem key={item.title}>
+        {subItems ? (
+          state === "collapsed" ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton
+                  tooltip={item.description}
+                  className="flex items-center justify-between"
+                >
+                  <div className="flex items-center">
+                    <Icon icon={item.icon} className="mr-2 h-4 w-4" />
+                    <span>{item.title}</span>
+                  </div>
+                  <ChevronRight className="h-4 w-4" />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                side="right"
+                align="start"
+                className="min-w-56 rounded-lg bg-sidebar text-sidebar-foreground border-sidebar-border"
+              >
+                <DropdownMenuLabel>{item.title}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {subItems.map((subItem) => (
+                  <DropdownMenuItem key={subItem.title} asChild>
+                    <Link
+                      to={subItem.url}
+                      className="flex items-center w-full cursor-pointer gap-2"
+                    >
+                      <Icon icon={subItem.icon} className="h-4 w-4" />
+                      <span>{subItem.title}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <>
+              <SidebarMenuButton
+                onClick={() => toggleItem(item.title)}
+                className="flex items-center justify-between"
+                tooltip={item.description}
+              >
+                <div className="flex items-center">
+                  <Icon icon={item.icon} className="mr-2 h-4 w-4" />
+                  <span>{item.title}</span>
+                </div>
+                <ChevronRight
+                  className={`h-4 w-4 transition-transform ${isExpanded ? "rotate-90" : ""
+                    }`}
+                />
+              </SidebarMenuButton>
+              {isExpanded && (
+                <div className="ml-6 border-l pl-2">
+                  {subItems.map((subItem) => (
+                    <SidebarMenuItem key={subItem.title} className="mt-1">
+                      <SidebarMenuButton
+                        asChild
+                        isActive={location.pathname === subItem.url}
+                        tooltip={subItem.description}
+                      >
+                        <Link to={subItem.url}>
+                          <Icon icon={subItem.icon} className="h-4 w-4" />
+                          <span>{subItem.title}</span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </div>
+              )}
+            </>
+          )
+        ) : (
+          <SidebarMenuButton
+            asChild
+            isActive={location.pathname === item.url}
+            tooltip={item.description}
+          >
+            <Link to={item.url} className="relative">
+              <Icon icon={item.icon} className="h-4 w-4" />
+              <span>{item.title}</span>
+            </Link>
+          </SidebarMenuButton>
+        )}
+      </SidebarMenuItem>
+    );
   };
 
   if (loadingProfile || loadingAuth) {
@@ -273,157 +381,7 @@ function AppSidebarContent({ children }) {
                   </SidebarGroupLabel>
                   <SidebarGroupContent>
                     <SidebarMenu>
-                      {adminNavItems.map((item) => (
-                        <SidebarMenuItem key={item.title}>
-                          {item.subItemsReservations ? (
-                            state === "collapsed" ? (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <SidebarMenuButton
-                                    tooltip={item.description}
-                                    className="flex items-center justify-between"
-                                  >
-                                    <div className="flex items-center">
-                                      <Icon
-                                        icon={item.icon}
-                                        className="mr-2 h-4 w-4"
-                                      />
-                                      <span>{item.title}</span>
-                                    </div>
-                                    <ChevronRight className="h-4 w-4" />
-                                  </SidebarMenuButton>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                  side="right"
-                                  align="start"
-                                  className="min-w-56 rounded-lg bg-sidebar text-sidebar-foreground border-sidebar-border"
-                                >
-                                  <DropdownMenuLabel>{item.title}</DropdownMenuLabel>
-                                  <DropdownMenuSeparator />
-                                  {item.subItemsReservations.map((subItem) => (
-                                    <DropdownMenuItem key={subItem.title} asChild>
-                                      <Link
-                                        to={subItem.url}
-                                        className="flex items-center w-full cursor-pointer gap-2"
-                                      >
-                                        <Icon icon={subItem.icon} className="h-4 w-4" />
-                                        <span>{subItem.title}</span>
-                                      </Link>
-                                    </DropdownMenuItem>
-                                  ))}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            ) : (
-                              <>
-                                <SidebarMenuButton
-                                  onClick={() =>
-                                    setIsReservasExpanded(!isReservasExpanded)
-                                  }
-                                  className="flex items-center justify-between"
-                                  tooltip={item.description}
-                                >
-                                  <div className="flex items-center">
-                                    <Icon
-                                      icon={item.icon}
-                                      className="mr-2 h-4 w-4"
-                                    />
-                                    <span>{item.title}</span>
-                                  </div>
-                                  <ChevronRight
-                                    className={`h-4 w-4 transition-transform ${isReservasExpanded ? "rotate-90" : ""
-                                      }`}
-                                  />
-                                </SidebarMenuButton>
-                                {isReservasExpanded && (
-                                  <div className="ml-6 border-l pl-2">
-                                    {item.subItemsReservations.map((subItem) => (
-                                      <SidebarMenuItem
-                                        key={subItem.title}
-                                        className="mt-1"
-                                      >
-                                        <SidebarMenuButton
-                                          asChild
-                                          isActive={
-                                            location.pathname === subItem.url
-                                          }
-                                          tooltip={subItem.description}
-                                        >
-                                          <Link to={subItem.url}>
-                                            <Icon
-                                              icon={subItem.icon}
-                                              className="h-4 w-4"
-                                            />
-                                            <span>{subItem.title}</span>
-                                          </Link>
-                                        </SidebarMenuButton>
-                                      </SidebarMenuItem>
-                                    ))}
-                                  </div>
-                                )}
-                              </>
-                            )
-                          ) : item.subItemsCourses ? (
-                            <>
-                              <SidebarMenuButton
-                                onClick={() =>
-                                  setIsCoursesExpanded(!isCoursesExpanded)
-                                }
-                                className="flex items-center justify-between"
-                                tooltip={item.description}
-                              >
-                                <div className="flex items-center">
-                                  <Icon
-                                    icon={item.icon}
-                                    className="mr-2 h-4 w-4"
-                                  />
-                                  <span>{item.title}</span>
-                                </div>
-                                <ChevronRight
-                                  className={`h-4 w-4 transition-transform ${isCoursesExpanded ? "rotate-90" : ""
-                                    }`}
-                                />
-                              </SidebarMenuButton>
-                              {isCoursesExpanded && (
-                                <div className="ml-6 border-l pl-2">
-                                  {item.subItemsCourses.map((subItem) => (
-                                    <SidebarMenuItem
-                                      key={subItem.title}
-                                      className="mt-1"
-                                    >
-                                      <SidebarMenuButton
-                                        asChild
-                                        isActive={
-                                          location.pathname === subItem.url
-                                        }
-                                        tooltip={subItem.description}
-                                      >
-                                        <Link to={subItem.url}>
-                                          <Icon
-                                            icon={subItem.icon}
-                                            className="h-4 w-4"
-                                          />
-                                          <span>{subItem.title}</span>
-                                        </Link>
-                                      </SidebarMenuButton>
-                                    </SidebarMenuItem>
-                                  ))}
-                                </div>
-                              )}
-                            </>
-                          ) : (
-                            <SidebarMenuButton
-                              asChild
-                              isActive={location.pathname === item.url}
-                              tooltip={item.description}
-                            >
-                              <Link to={item.url} className="relative">
-                                <Icon icon={item.icon} className="h-4 w-4" />
-                                <span>{item.title}</span>
-                              </Link>
-                            </SidebarMenuButton>
-                          )}
-                        </SidebarMenuItem>
-                      ))}
+                      {adminNavItems.map(renderMenuItem)}
                     </SidebarMenu>
                   </SidebarGroupContent>
                 </SidebarGroup>

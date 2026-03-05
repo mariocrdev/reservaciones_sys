@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { differenceInYears } from "date-fns";
 import { useAuth } from "@/hooks/useAuth";
 import {
   useProfile,
@@ -34,7 +35,9 @@ export default function MyProfile() {
     phone: "",
     address: "",
     city: "",
+    city: "",
     email: "",
+    date_birth: "",
   });
 
   const [selectedImage, setSelectedImage] = useState(null);
@@ -50,6 +53,7 @@ export default function MyProfile() {
         address: profile.address || "",
         city: profile.city || "",
         email: profile.email || session?.user?.email || "",
+        date_birth: profile.date_birth || "",
       });
       if (profile.profile_image_url) {
         setPreviewUrl(profile.profile_image_url);
@@ -81,7 +85,7 @@ export default function MyProfile() {
 
     try {
       let imageUrl = profile?.profile_image_url;
-      
+
 
       if (selectedImage) {
         imageUrl = await uploadImage.mutateAsync({
@@ -226,6 +230,24 @@ export default function MyProfile() {
                   name="address"
                   value={formData.address}
                   placeholder="Tu dirección"
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <Label htmlFor="date_birth">Fecha de Nacimiento</Label>
+                  {formData.date_birth && (
+                    <span className="text-sm text-muted-foreground">
+                      Edad: {differenceInYears(new Date(), new Date(formData.date_birth))} años
+                    </span>
+                  )}
+                </div>
+                <Input
+                  id="date_birth"
+                  name="date_birth"
+                  type="date"
+                  value={formData.date_birth}
                   onChange={handleChange}
                 />
               </div>

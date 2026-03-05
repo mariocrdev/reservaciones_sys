@@ -58,13 +58,30 @@ export const MembershipService = {
     if (fetchError && fetchError.code !== "PGRST116") throw fetchError;
 
     if (product?.image_url) {
-      await this.deleteImage(product.image_url);
+      await MembershipService.deleteImage(product.image_url);
     }
 
     const { error } = await supabase
       .from("membership_products")
       .delete()
       .eq("id", id);
+
+    if (error) throw error;
+    return true;
+  },
+
+  async removeProductImage(productId, imageUrl) {
+    console.log("🚀 ~ productId:", productId);
+    if (!imageUrl) return;
+
+    // 1. Delete from bucket
+    await this.deleteImage(imageUrl);
+
+    // 2. Update product to remove image reference
+    const { error } = await supabase
+      .from("membership_products")
+      .update({ image_url: null })
+      .eq("id", productId);
 
     if (error) throw error;
     return true;
@@ -151,7 +168,6 @@ export const MembershipService = {
     }
   },
 
-
   // --- SUBSCRIPTIONS ---
   async subscribe({ userId, planId, familyMemberId = null }) {
     const { data, error } = await supabase
@@ -172,7 +188,7 @@ export const MembershipService = {
 
   async getUserSubscriptions(userId) {
     // Fetch subscriptions for the user (self) and their family members
-    // We can do this by filtering where user_id matches. 
+    // We can do this by filtering where user_id matches.
     // The policy "users_view_own_reservations" is for reservations.
     // Let's check subscriptions policies.
     // "users_view_own_subscriptions" -> auth.uid() = user_id.
@@ -180,7 +196,8 @@ export const MembershipService = {
 
     const { data, error } = await supabase
       .from("subscriptions")
-      .select(`
+      .select(
+        `
         *,
         plan:membership_plans (
           *,
@@ -188,11 +205,12 @@ export const MembershipService = {
         ),
         family_member:family_members (*),
         payments:payments(*)
-      `)
-      // We can't easily limit inner join in one go without a function, 
+      `,
+      )
+      // We can't easily limit inner join in one go without a function,
       // but we can order them to ensure [0] is latest.
       // However, supabase-js syntax for inner order is .order(..., {foreignTable: 'payments'})
-      // Actually simpler to just fetch them and sort in JS if the volume is low, 
+      // Actually simpler to just fetch them and sort in JS if the volume is low,
       // OR use the dot syntax if supported properly for referencing inner tables.
       // Let's try standard approach:
       .order("created_at", { ascending: false });
@@ -202,9 +220,13 @@ export const MembershipService = {
     if (error) throw error;
 
     // Sort payments manually to be safe
-    const processedData = data.map(sub => ({
+    const processedData = data.map((sub) => ({
       ...sub,
-      payments: sub.payments ? sub.payments.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)) : []
+      payments: sub.payments
+        ? sub.payments.sort(
+            (a, b) => new Date(b.created_at) - new Date(a.created_at),
+          )
+        : [],
     }));
 
     return processedData;
@@ -217,9 +239,9 @@ export const MembershipService = {
     const { data, error } = await supabase
       .from("subscriptions")
       .update({
-        status: 'cancelled',
+        status: "cancelled",
         cancellation_reason: reason,
-        cancelled_at: new Date().toISOString()
+        cancelled_at: new Date().toISOString(),
       })
       .eq("id", id)
       .select()
@@ -227,5 +249,5 @@ export const MembershipService = {
 
     if (error) throw error;
     return data;
-  }
+  },
 };

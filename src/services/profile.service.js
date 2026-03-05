@@ -13,6 +13,7 @@ export const ProfileService = {
         email,
         address,
         city,
+        date_birth,
         profile_image_url,
         user_roles (
           role
@@ -40,9 +41,9 @@ export const ProfileService = {
         last_name,
         phone,
         email,
-        email,
         address,
         city,
+        date_birth,
         profile_image_url
       `,
     );
@@ -59,6 +60,7 @@ export const ProfileService = {
       phone: profileData.phone,
       address: profileData.address,
       city: profileData.city,
+      date_birth: profileData.date_birth,
     };
 
     if (profileData.profile_image) {

@@ -109,7 +109,7 @@ export default function ReservationsManagement() {
               setPage(1);
             }}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-45">
               <SelectValue placeholder="Estado" />
             </SelectTrigger>
             <SelectContent>
@@ -292,7 +292,7 @@ export default function ReservationsManagement() {
                                         Comprobante
                                       </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-80 sm:w-[400px] p-0 overflow-hidden">
+                                    <PopoverContent className="w-80 sm:w-100 p-0 overflow-hidden">
                                       <img
                                         src={reservation.payments[0].proof_url}
                                         alt="Comprobante de pago"

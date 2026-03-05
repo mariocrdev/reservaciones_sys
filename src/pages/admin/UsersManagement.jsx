@@ -21,12 +21,15 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import Loading from "@/components/global/Loading";
 import { toast } from "sonner";
+import { FamilyMembersModal } from "@/components/admin/users/FamilyMembersModal";
 
 export default function UsersManagement() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [isFamilyModalOpen, setIsFamilyModalOpen] = useState(false);
   const limit = 20;
 
   // Debounce search
@@ -120,6 +123,7 @@ export default function UsersManagement() {
               <TableHead>Nombre</TableHead>
               <TableHead>Email</TableHead>
               <TableHead>Teléfono</TableHead>
+              <TableHead className="text-center">Familiares</TableHead>
               <TableHead>Rol</TableHead>
             </TableRow>
           </TableHeader>
@@ -152,6 +156,25 @@ export default function UsersManagement() {
                   </TableCell>
                   <TableCell>{user.email}</TableCell>
                   <TableCell>{user.phone || "-"}</TableCell>
+                  <TableCell className="text-center">
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="font-medium">{user.familyCount}</span>
+                      {user.familyCount > 0 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0"
+                          onClick={() => {
+                            setSelectedUserId(user.id);
+                            setIsFamilyModalOpen(true);
+                          }}
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                          <span className="sr-only">Ver familiares</span>
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell>
                     <Select
                       defaultValue={user.role}
@@ -203,6 +226,12 @@ export default function UsersManagement() {
           </Button>
         </div>
       </div>
+
+      <FamilyMembersModal
+        userId={selectedUserId}
+        open={isFamilyModalOpen}
+        onOpenChange={setIsFamilyModalOpen}
+      />
     </div>
   );
 }

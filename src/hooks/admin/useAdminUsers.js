@@ -28,3 +28,11 @@ export const useUpdateUserRole = () => {
     },
   });
 };
+
+export const useFamilyMembersByUser = (userId) => {
+  return useQuery({
+    queryKey: ["family-members", userId],
+    queryFn: () => UserService.getFamilyMembersByUserId(userId),
+    enabled: !!userId,
+  });
+};

@@ -34,6 +34,7 @@ export function ProfileCompletionModal() {
     phone: "",
     address: "",
     city: "",
+    date_birth: "",
   });
   const [selectedImage, setSelectedImage] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -53,6 +54,7 @@ export function ProfileCompletionModal() {
           phone: profile.phone || "",
           address: profile.address || "",
           city: profile.city || "",
+          date_birth: profile.date_birth || "",
         });
         if (profile.profile_image_url) {
           setPreviewUrl(profile.profile_image_url);
@@ -228,7 +230,20 @@ export function ProfileCompletionModal() {
                 />
               </div>
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="date_birth">
+                Fecha de Nacimiento <span className="text-muted-foreground text-xs">(Opcional)</span>
+              </Label>
+              <Input
+                id="date_birth"
+                name="date_birth"
+                type="date"
+                value={formData.date_birth}
+                onChange={handleChange}
+              />
+            </div>
           </div>
+
 
           <DialogFooter>
             <Button
@@ -242,6 +257,6 @@ export function ProfileCompletionModal() {
           </DialogFooter>
         </form>
       </DialogContent>
-    </Dialog>
+    </Dialog >
   );
 }
