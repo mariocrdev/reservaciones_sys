@@ -11,6 +11,12 @@
   --radius-2xl: calc(var(--radius) + 8px);
   --radius-3xl: calc(var(--radius) + 12px);
   --radius-4xl: calc(var(--radius) + 16px);
+
+  /* ── Sport Club Color Palette ── */
+  --color-sport-AquaLight: #22d3ee;     /* Cyan-400 – primary accent */
+  --color-sport-blueOcean: #1e3a5f;     /* Deep navy – backgrounds */
+  --color-sport-blueDark:  #0f2337;     /* Darker navy – dark mode */
+  --color-sport-darkMatte: #1a1a2e;     /* Matte dark – overlays */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -120,4 +126,31 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* ─── Hero animations ──────────────────────────── */
+@keyframes hero-zoom {
+  from { transform: scale(1);    }
+  to   { transform: scale(1.06); }
+}
+
+@keyframes hero-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-zoom {
+  animation: hero-zoom 12s ease-out forwards;
+}
+
+.hero-fade-up {
+  opacity: 0;
+  animation: hero-fade-up 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  /* Each element reads its own animationDelay from inline style */
 }

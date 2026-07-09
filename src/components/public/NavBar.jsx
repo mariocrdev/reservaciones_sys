@@ -87,14 +87,6 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Alternar tema claro/oscuro
-  const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
-    document.documentElement.classList.toggle("dark");
-    localStorage.setItem("theme", newTheme);
-  };
-
   // Cargar tema desde localStorage
   useEffect(() => {
     const savedTheme = localStorage.getItem("theme") || "light";
@@ -123,7 +115,7 @@ const Navbar = () => {
         // Diseño condicional: Transparente arriba, Glass al bajar
         scrolled
           ? "bg-background/80 backdrop-blur-md border-b border-border/40 py-2 shadow-sm"
-          : "bg-transparent py-4 border-b border-white/5 backdrop-blur-[2px]",
+          : "bg-transparent py-4  backdrop-blur-[2px]",
       )}
     >
       <div className="container mx-auto px-4 md:px-8">

@@ -49,28 +49,46 @@ const Services = () => {
   return (
     <section
       id="servicios"
-      className="py-24"
+      className="py-24 relative overflow-hidden"
     >
-      <div className="container mx-auto px-4">
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes scroll-right {
+          0% { transform: translateX(-50%); }
+          100% { transform: translateX(0); }
+        }
+        .animate-scroll-right {
+          animation: scroll-right 40s linear infinite;
+        }
+        .animate-scroll-right:hover {
+          animation-play-state: paused;
+        }
+      ` }} />
+
+      <div className="container mx-auto px-4 relative z-10 mb-10">
         {/* Header de Sección */}
-        <div className="flex flex-col items-center text-center mb-20 space-y-4">
-          <Badge  className="px-4 py-1 uppercase tracking-widest text-xs font-bold">
+        <div className="flex flex-col items-center text-center space-y-4">
+          <Badge className="px-4 py-1 uppercase tracking-widest text-xs font-bold">
             Nuestras Actividades
           </Badge>
-          <h2 className="text-4xl  font-extrabold   tracking-tight">
+          <h2 className="text-4xl font-extrabold tracking-tight">
             {landingContent.services.title}
-            
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl leading-relaxed">
             {landingContent.services.description}
           </p>
         </div>
+      </div>
 
-        {/* Grid de Servicios */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {services.map((service) => (
-            <div key={service.id} className="h-full">
-              <Card className="h-full overflow-hidden group p-0 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-500">
+      {/* Carrusel Horizontal Infinito hacia la Derecha */}
+      <div className="relative w-full overflow-hidden py-4 select-none">
+        {/* Sombras de degradado en los extremos para efecto premium */}
+        <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-background/80 to-transparent z-20 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-background/80 to-transparent z-20 pointer-events-none" />
+
+        <div className="flex w-max gap-8 animate-scroll-right">
+          {[...services, ...services].map((service, index) => (
+            <div key={`${service.id}-${index}`} className="w-[340px] shrink-0">
+              <Card className="h-full overflow-hidden group p-0 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-500 rounded-3xl border border-border/60 bg-card">
                 
                 {/* Carousel Container */}
                 <div className="relative w-full aspect-4/3 overflow-hidden">
@@ -87,33 +105,33 @@ const Services = () => {
                                 e.target.src = "/placeholder.svg?height=300&width=400";
                               }}
                             />
-                            
                           </div>
                         </CarouselItem>
                       ))}
                     </CarouselContent>
                     
                     {/* Controles del Carousel: Solo visibles en hover para minimalismo */}
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    {service.images.length > 1 && (
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                         <CarouselPrevious className="absolute left-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-black/30 backdrop-blur-md border-none text-white hover:bg-black/50" />
                         <CarouselNext className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 bg-black/30 backdrop-blur-md border-none text-white hover:bg-black/50" />
-                    </div>
+                      </div>
+                    )}
                   </Carousel>
 
                   {/* Badge Destacado */}
                   {service.popular && (
                     <div className="absolute top-4 right-4 z-20">
-                         <Badge className="bg-sport-AquaLight hover:bg-sport-AquaLight text-white border-none shadow-lg px-3 py-1">
-                            <Icon icon="solar:star-bold" className="mr-1 h-3 w-3" />
-                            Popular
-                         </Badge>
+                      <Badge className="bg-sport-AquaLight hover:bg-sport-AquaLight text-white border-none shadow-lg px-3 py-1">
+                        <Icon icon="solar:star-bold" className="mr-1 h-3 w-3" />
+                        Popular
+                      </Badge>
                     </div>
                   )}
 
                   {/* Icono Flotante Rediseñado */}
                   <div className={cn(
                     "absolute top-4 left-4 z-20 w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg backdrop-blur-md",
-                    // Si service.color es una clase bg-color, usamos eso, si no un fallback
                     service.color || "bg-white/90 text-sport-darkMatte"
                   )}>
                     <ServiceIcon
@@ -124,8 +142,8 @@ const Services = () => {
                 </div>
 
                 {/* Contenido de la Tarjeta */}
-                <CardHeader className=" px-6">
-                  <h3 className="text-xl font-bold  flex items-center gap-2 transition-colors">
+                <CardHeader className="px-6 pt-5">
+                  <h3 className="text-xl font-bold flex items-center gap-2 transition-colors text-foreground">
                     {service.title}
                   </h3>
                 </CardHeader>

@@ -43,6 +43,7 @@ import AdminEnrolments from "@/pages/admin/AdminEnrolments";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 
 import MembershipsPage from "@/pages/user/MembershipsPage";
+import UserDashboard from "@/pages/user/UserDashboard";
 
 const AppRoutes = () => {
   const { session } = useAuth();
@@ -61,7 +62,7 @@ const AppRoutes = () => {
       {/* Rutas protegidas con sidebar */}
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
-          <Route path="/dashboard" element={<>gfdgfd</>} />
+          <Route path="/dashboard" element={<UserDashboard />} />
           <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/users" element={<UsersManagement />} />
