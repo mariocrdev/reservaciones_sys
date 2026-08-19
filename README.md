@@ -39,30 +39,30 @@
 La arquitectura sigue el patrón **BaaS (Backend-as-a-Service) + Client-Side SPA con Data-Driven Security**:
 
 ```mermaid
-graph TD
+flowchart TD
     Client["💻 Frontend SPA (React 19 + Vite + Tailwind v4)"]
-    
-    subgraph Supabase["☁️ Supabase Cloud (PostgreSQL & Storage & Auth)"]
-        Auth["🔐 Supabase Auth (JWT & Roles)"]
+
+    subgraph Supabase ["☁️ Supabase Cloud"]
+        Auth["🔐 Supabase Auth (JWT y Roles)"]
         Storage["📦 Supabase Storage (public_assets, payment_vouchers)"]
-        
-        subgraph DBEngine["⚙️ PostgreSQL Core Engine"]
-            Tables[("🗄️ Relational Tables")]
+
+        subgraph DBEngine ["⚙️ PostgreSQL Core Engine"]
+            Tables[("🗄️ Tablas Relacionales")]
             RLS["🛡️ Row Level Security (RLS Engine)"]
-            Triggers["⚡ Triggers & Stored Procedures (PL/pgSQL)"]
-            GiST["⏱️ GiST Constraints & tsrange Engine"]
-            Cron["⏰ pg_cron (Expired Reservations Worker)"]
+            Triggers["⚡ Triggers y Stored Procedures (PL/pgSQL)"]
+            GiST["⏱️ GiST Constraints y tsrange Engine"]
+            Cron["⏰ pg_cron (Worker Reservas Expiradas)"]
         end
     end
 
-    Client -->|Auth State / JWT| Auth
-    Client -->|REST & Realtime Queries| RLS
-    Client -->|Direct File Upload / Proofs| Storage
+    Client -->|Auth y Sesión JWT| Auth
+    Client -->|Consultas y Mutaciones| RLS
+    Client -->|Carga de Comprobantes| Storage
     RLS --> Tables
     Tables --> Triggers
     Tables --> GiST
     Cron --> Tables
-    Triggers -->|Status Sync & Auto-activation| Tables
+    Triggers -->|Sincronización de Estados| Tables
 ```
 
 ---
@@ -157,32 +157,32 @@ El esquema de base de datos está normalizado y protegido bajo el principio de m
 
 ```mermaid
 erDiagram
-    PROFILES ||--o{ USER_ROLES : "has roles"
-    PROFILES ||--o{ FAMILY_MEMBERS : "parent of"
-    PROFILES ||--o{ RESERVATIONS : "books"
-    PROFILES ||--o{ SUBSCRIPTIONS : "subscribes"
-    PROFILES ||--o{ ENROLMENTS : "enrols / pays"
-    PROFILES ||--o{ PAYMENTS : "performs"
+    PROFILES ||--o{ USER_ROLES : has_roles
+    PROFILES ||--o{ FAMILY_MEMBERS : parent_of
+    PROFILES ||--o{ RESERVATIONS : books
+    PROFILES ||--o{ SUBSCRIPTIONS : subscribes
+    PROFILES ||--o{ ENROLMENTS : enrols
+    PROFILES ||--o{ PAYMENTS : performs
     
-    TYPE_FACILITIES ||--o{ FACILITIES : "categorizes"
-    FACILITIES ||--o{ FACILITY_HOURS : "operating shifts"
-    FACILITIES ||--o{ FACILITY_BLOCKAGES : "maintenance/holidays"
-    FACILITIES ||--o{ RESERVATIONS : "reserved at"
-    FACILITIES ||--o{ COURSE_SCHEDULE : "hosts class"
+    TYPE_FACILITIES ||--o{ FACILITIES : categorizes
+    FACILITIES ||--o{ FACILITY_HOURS : operating_shifts
+    FACILITIES ||--o{ FACILITY_BLOCKAGES : maintenance
+    FACILITIES ||--o{ RESERVATIONS : reserved_at
+    FACILITIES ||--o{ COURSE_SCHEDULE : hosts_class
     
-    MEMBERSHIP_PRODUCTS ||--o{ MEMBERSHIP_PLANS : "offers plans"
-    MEMBERSHIP_PLANS ||--o{ SUBSCRIPTIONS : "associated to"
-    FAMILY_MEMBERS ||--o{ SUBSCRIPTIONS : "beneficiary of"
+    MEMBERSHIP_PRODUCTS ||--o{ MEMBERSHIP_PLANS : offers_plans
+    MEMBERSHIP_PLANS ||--o{ SUBSCRIPTIONS : associated_to
+    FAMILY_MEMBERS ||--o{ SUBSCRIPTIONS : beneficiary_of
     
-    COURSES ||--o{ COURSE_SLOTS : "has batches"
-    PROFILES ||--o{ COURSE_SLOTS : "instructor for"
-    COURSE_SLOTS ||--o{ COURSE_SCHEDULE : "scheduled sessions"
-    COURSE_SLOTS ||--o{ ENROLMENTS : "receives"
-    FAMILY_MEMBERS ||--o{ ENROLMENTS : "child enrolled in"
+    COURSES ||--o{ COURSE_SLOTS : has_batches
+    PROFILES ||--o{ COURSE_SLOTS : instructor_for
+    COURSE_SLOTS ||--o{ COURSE_SCHEDULE : scheduled_sessions
+    COURSE_SLOTS ||--o{ ENROLMENTS : receives
+    FAMILY_MEMBERS ||--o{ ENROLMENTS : child_enrolled
     
-    RESERVATIONS ||--o| PAYMENTS : "paid through"
-    SUBSCRIPTIONS ||--o| PAYMENTS : "paid through"
-    ENROLMENTS ||--o| PAYMENTS : "paid through"
+    RESERVATIONS ||--o| PAYMENTS : paid_through
+    SUBSCRIPTIONS ||--o| PAYMENTS : paid_through
+    ENROLMENTS ||--o| PAYMENTS : paid_through
 ```
 
 ---
@@ -338,29 +338,29 @@ El sistema delega la integridad financiera y temporal a triggers PostgreSQL de a
 ```mermaid
 sequenceDiagram
     autonumber
-    actor User as 👤 Usuario
-    participant Frontend as 💻 Frontend UI
-    participant Payments as 💳 payments (DB)
-    participant Reservations as 🏟️ reservations (DB)
-    participant Subscriptions as 📜 subscriptions (DB)
-    participant Enrolments as 🎓 enrolments (DB)
-    actor Admin as 👨‍💼 Administrador
+    actor User as Usuario
+    participant Frontend as Frontend UI
+    participant Payments as payments (DB)
+    participant Reservations as reservations (DB)
+    participant Subscriptions as subscriptions (DB)
+    participant Enrolments as enrolments (DB)
+    actor Admin as Administrador
 
     User->>Frontend: Reserva Cancha / Elige Plan / Inscribe Curso
-    Frontend->>Payments: Crea registro de pago (status: 'pending')
+    Frontend->>Payments: Crea registro de pago (status: pending)
     User->>Frontend: Sube voucher de transferencia bancaria
     Frontend->>Payments: Actualiza proof_url con URL del voucher
-    Payments-->>Reservations: Trigger 'handle_payment_proof': Pausa timer (expires_at = null)
+    Payments-->>Reservations: Trigger handle_payment_proof (Pausa timer: expires_at = null)
     
     Admin->>Frontend: Revisa y aprueba comprobante
-    Frontend->>Payments: Actualiza status -> 'paid'
+    Frontend->>Payments: Actualiza status a paid
     
     alt Pago de Reserva
-        Payments-->>Reservations: Trigger 'sync_reservation_status_on_payment' -> status: 'confirmed'
-    else Pago de Membresía
-        Payments-->>Subscriptions: Trigger 'handle_subscription_payment_activation' -> status: 'active', calcula end_date
+        Payments-->>Reservations: Trigger sync_reservation_status_on_payment (status: confirmed)
+    else Pago de Membresia
+        Payments-->>Subscriptions: Trigger handle_subscription_payment_activation (status: active, calcula end_date)
     else Pago de Curso
-        Payments-->>Enrolments: Trigger 'handle_enrolment_payment_confirmation' -> status: 'confirmed', +1 current_enrolments
+        Payments-->>Enrolments: Trigger handle_enrolment_payment_confirmation (status: confirmed, +1 inscritos)
     end
 ```
 
