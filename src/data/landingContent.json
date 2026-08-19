@@ -295,13 +295,13 @@
   },
   "testimonials": {
     "title": "Lo que dicen nuestros miembros",
-    "description": "Descubre por qué nuestros miembros eligen Tennis Club Portoviejo para sus actividades deportivas",
+    "description": "Descubre por qué nuestros miembros eligen nuestro Centro Deportivo para sus actividades deportivas",
     "list": [
       {
         "id": 1,
         "name": "María Rodríguez",
         "role": "Miembro desde 2019",
-        "content": "El Tennis Club Portoviejo ha transformado mi rutina de ejercicios. Las instalaciones son impecables y los entrenadores realmente se preocupan por tu progreso. ¡No puedo imaginar entrenar en otro lugar!",
+        "content": "El Centro Deportivo ha transformado mi rutina de ejercicios. Las instalaciones son impecables y los entrenadores realmente se preocupan por tu progreso. ¡No puedo imaginar entrenar en otro lugar!",
         "avatar": "https://images.unsplash.com/photo-1521566652839-697aa473761a?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
         "rating": 5
       },
@@ -309,7 +309,7 @@
         "id": 2,
         "name": "Carlos Mendoza",
         "role": "Miembro desde 2020",
-        "content": "Me uní al club durante la pandemia buscando mejorar mi salud. La atención personalizada y el ambiente amigable me han ayudado a mantenerme motivado. Los resultados hablan por sí solos.",
+        "content": "Me uní al centro buscando mejorar mi salud. La atención personalizada y el ambiente amigable me han ayudado a mantenerme motivado. Los resultados hablan por sí solos.",
         "avatar": "https://plus.unsplash.com/premium_photo-1689539137236-b68e436248de?q=80&w=2071&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
         "rating": 5
       },
@@ -317,7 +317,7 @@
         "id": 3,
         "name": "Ana Valencia",
         "role": "Miembro desde 2018",
-        "content": "Como tenista aficionada, encontrar un club con canchas de calidad y profesores experimentados era crucial. El Tennis Club Portoviejo excedió mis expectativas. Mi técnica ha mejorado notablemente.",
+        "content": "Como aficionada al deporte, encontrar un centro con canchas de calidad y profesores experimentados era crucial. El Centro Deportivo excedió mis expectativas. Mi técnica ha mejorado notablemente.",
         "avatar": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
         "rating": 4
       }
@@ -334,7 +334,7 @@
     "additionalInfo": [
       {
         "label": "Ubicación",
-        "value": "Av. Principal 123, Portoviejo, Ecuador",
+        "value": "Av. Principal 123, Instalaciones Deportivas",
         "icon": "MapPin"
       },
       {
@@ -344,7 +344,7 @@
       },
       {
         "label": "Certificaciones",
-        "value": "Club certificado por la Federación Ecuatoriana de Tenis",
+        "value": "Instalaciones y entrenadores certificados profesionalmente",
         "icon": "Award"
       }
     ]
@@ -362,13 +362,13 @@
       {
         "icon": "Mail",
         "title": "Email",
-        "value": "info@tennisclub.com",
+        "value": "contacto@centrodeportivo.com",
         "color": "bg-purple-500/10 text-purple-500"
       },
       {
         "icon": "MessageSquare",
         "title": "Redes Sociales",
-        "value": "@portoviejotennisclub",
+        "value": "@centrodeportivo",
         "color": "bg-pink-500/10 text-pink-500"
       }
     ]
@@ -376,9 +376,9 @@
   "footer": {
     "clubInfo": {
       "description": "Ofrecemos servicios deportivos de calidad para todas las edades y niveles. Nuestro objetivo es promover un estilo de vida saludable y activo en nuestra comunidad.",
-      "address": "Av. Principal 123, Portoviejo, Ecuador",
+      "address": "Av. Principal 123, Instalaciones Deportivas",
       "phone": "+593 123 456 789",
-      "email": "info@tennisclub.com"
+      "email": "contacto@centrodeportivo.com"
     },
     "quickLinks": [
       { "label": "Inicio", "href": "#inicio" },

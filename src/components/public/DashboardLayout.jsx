@@ -27,7 +27,7 @@ const DashboardLayout = ({ children }) => {
                   <img
                     className="h-8 w-auto"
                     src="/logoptc.svg"
-                    alt="Portoviejo Tenis Club"
+                    alt="Centro Deportivo"
                   />
                 </Link>
               </div>

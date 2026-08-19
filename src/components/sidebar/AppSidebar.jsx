@@ -358,9 +358,9 @@ function AppSidebarContent({ children }) {
                   </div>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-semibold">
-                      Club Deportivo
+                      Centro Deportivo
                     </span>
-                    <span className="truncate text-xs">Portoviejo</span>
+                    <span className="truncate text-xs">Gestión y Reservas</span>
                   </div>
                 </Link>
               </SidebarMenuButton>

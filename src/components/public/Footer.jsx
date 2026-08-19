@@ -53,7 +53,7 @@ const Footer = () => {
                 <div className="absolute inset-0 bg-sport-AquaLight/20 rounded-full"></div>
                 <img
                   src="/logo-sin-fondo-1-1920x1920.png"
-                  alt="Portoviejo Tenis Club"
+                  alt="Centro Deportivo"
                   className="h-full w-full object-contain "
                   onError={(e) => {
                     const target = e.target;
@@ -62,9 +62,9 @@ const Footer = () => {
                 />
               </div>
               <div>
-                <span className="font-bold text-xl text-white">Portoviejo</span>
+                <span className="font-bold text-xl text-white">Centro</span>
                 <span className="block text-sm text-sport-AquaLight font-medium">
-                  Tennis Club
+                  Deportivo
                 </span>
               </div>
             </div>
@@ -188,7 +188,7 @@ const Footer = () => {
         {/* Bottom section */}
         <div className="pt-8 flex flex-col md:flex-row justify-between items-center">
           <p className="text-gray-400 text-sm mb-4 md:mb-0">
-            &copy; {new Date().getFullYear()} Portoviejo Tennis Club. Todos los
+            &copy; {new Date().getFullYear()} Centro Deportivo. Todos los
             derechos reservados.
           </p>
           <div className="flex space-x-6">
