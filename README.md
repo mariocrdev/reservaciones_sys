@@ -141,6 +141,7 @@ reservaciones-sys/
 │   │       ├── CoursesCatalog.jsx
 │   │       ├── MyEnrolments.jsx
 │   │       ├── FamilyMembers.jsx
+│   │       ├── HelpCenter.jsx
 │   │       └── MyProfile.jsx
 │   ├── routes/                  # Configuración de rutas (`routes.jsx`, `protected.route.jsx`)
 │   ├── services/                # Capa de consumo API / Supabase Client
@@ -412,6 +413,7 @@ El frontend está estructurado mediante `react-router-dom` v7 con rutas pública
 │   ├── /dashboard/enrolments -> Inscripciones activas (personales y familiares)
 │   ├── /profile              -> Perfil de usuario y seguridad
 │   ├── /profile/family       -> Gestión de dependientes/hijos
+│   ├── /help                 -> Centro de ayuda, preguntas frecuentes y soporte
 │   └── /admin/*              -> Módulo Administrativo:
 │       ├── /admin/dashboard  -> Métricas, KPIs de ingresos, ocupación
 │       ├── /admin/users      -> Control de usuarios y asignación de roles

@@ -232,10 +232,11 @@ function AppSidebarContent({ children }) {
     if (location.pathname === "/memberships") return "Membresías";
     if (location.pathname === "/dashboard/courses") return "Cursos";
     if (location.pathname === "/dashboard/enrolments") return "Mis Inscripciones";
+    if (location.pathname === "/help") return "Centro de Ayuda";
     if (location.pathname === "/profile/childrens") return "Niños";
     if (location.pathname.includes("/facilities/"))
       return "Detalle de Instalación";
-    return "Club Deportivo";
+    return "Centro Deportivo";
   };
 
   const getUserInitials = () => {
@@ -350,10 +351,11 @@ function AppSidebarContent({ children }) {
             <SidebarMenuItem>
               <SidebarMenuButton size="lg" asChild>
                 <Link to="/">
-                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-muted">
-                    <Icon
-                      icon="emojione-monotone:sports-medal"
-                      className="size-5"
+                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-muted overflow-hidden p-0.5">
+                    <img
+                      src="/logo_reservacion.png"
+                      alt="Centro Deportivo"
+                      className="size-full object-contain"
                     />
                   </div>
                   <div className="grid flex-1 text-left text-sm leading-tight">
@@ -420,14 +422,18 @@ function AppSidebarContent({ children }) {
                 <SidebarGroupContent>
                   <SidebarMenu>
                     <SidebarMenuItem>
-                      <SidebarMenuButton asChild tooltip="Centro de ayuda">
-                        <a href="#" target="_blank" rel="noopener noreferrer">
+                      <SidebarMenuButton
+                        asChild
+                        isActive={location.pathname === "/help"}
+                        tooltip="Preguntas frecuentes y soporte"
+                      >
+                        <Link to="/help">
                           <Icon
                             icon="material-symbols:contact-support"
                             className="h-4 w-4"
                           />
-                          <span>Ayuda</span>
-                        </a>
+                          <span>Centro de Ayuda</span>
+                        </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   </SidebarMenu>

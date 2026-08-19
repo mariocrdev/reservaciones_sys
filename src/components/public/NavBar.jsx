@@ -123,11 +123,11 @@ const Navbar = () => {
           {/* Logo y nombre */}
           <div className="flex items-center gap-2">
             <a href="#" className="flex items-center group">
-              <div className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full overflow-hidden border border-white/10 transition-transform group-hover:scale-105">
+              <div className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-full overflow-hidden border border-border/20 transition-transform group-hover:scale-105 bg-background/50">
                 <img
-                  src="https://files.mariocr.dev/perfil.jpeg"
-                  alt="reservacionSys"
-                  className="h-full w-full object-cover"
+                  src="/logo_reservacion.png"
+                  alt="Centro Deportivo"
+                  className="h-full w-full object-contain p-1"
                   onError={(e) => {
                     const target = e.target;
                     target.src = "/placeholder.svg?height=64&width=64";

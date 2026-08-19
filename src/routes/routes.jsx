@@ -44,6 +44,7 @@ import AdminDashboard from "@/pages/admin/AdminDashboard";
 
 import MembershipsPage from "@/pages/user/MembershipsPage";
 import UserDashboard from "@/pages/user/UserDashboard";
+import HelpCenter from "@/pages/user/HelpCenter";
 
 const AppRoutes = () => {
   const { session } = useAuth();
@@ -80,6 +81,7 @@ const AppRoutes = () => {
           <Route path="/profile/family" element={<FamilyMembers />} />
           <Route path="/dashboard/courses" element={<CoursesCatalog />} />
           <Route path="/dashboard/enrolments" element={<MyEnrolments />} />
+          <Route path="/help" element={<HelpCenter />} />
           {/* <Route path="/facilities" element={<Facilities />} />
         <Route path="/facilities/:type/:id" element={<FacilityDetail/>} />
         <Route path="/courses" element={<Courses/>} />

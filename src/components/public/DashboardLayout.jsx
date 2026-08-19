@@ -25,8 +25,8 @@ const DashboardLayout = ({ children }) => {
               <div className="flex shrink-0 items-center">
                 <Link to="/">
                   <img
-                    className="h-8 w-auto"
-                    src="/logoptc.svg"
+                    className="h-8 w-auto object-contain"
+                    src="/logo_reservacion.png"
                     alt="Centro Deportivo"
                   />
                 </Link>

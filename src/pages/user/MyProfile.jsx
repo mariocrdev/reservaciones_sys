@@ -35,7 +35,6 @@ export default function MyProfile() {
     phone: "",
     address: "",
     city: "",
-    city: "",
     email: "",
     date_birth: "",
   });
